@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import { askGemini, extractJsonArray } from "@/lib/gemini";
+import { askGroq, extractJsonArray } from "@/lib/groq";
 
 export async function POST(req: Request) {
   try {
@@ -64,7 +64,7 @@ Rules:
 Return ONLY a JSON array, no markdown backticks, no explanation:
 [{"start":"09:00","end":"09:45","title":"Task Name","duration":"45m","priority":"high","type":"task"}]`;
 
-    const rawContent = await askGemini(prompt, 0.2);
+    const rawContent = await askGroq(prompt, 0.2);
     const schedule = extractJsonArray(rawContent) as Array<{
       start: string;
       end: string;

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import { askGemini, extractJsonArray } from "@/lib/gemini";
+import { askGroq, extractJsonArray } from "@/lib/groq";
 
 export async function POST() {
   try {
@@ -43,7 +43,7 @@ Tasks: ${JSON.stringify(tasksData)}
 Return ONLY a JSON array, no markdown, no backticks, no explanation:
 [{"id":"task_id","aiScore":0.95}]`;
 
-    const content = await askGemini(prompt, 0.1);
+    const content = await askGroq(prompt, 0.1);
     const scores = extractJsonArray(content) as Array<{ id: string; aiScore: number }>;
 
     // Bulk update tasks with their new scores

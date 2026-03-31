@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { askGemini } from "@/lib/gemini";
+import { askGroq } from "@/lib/groq";
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +25,7 @@ Generate exactly ONE short, punchy sentence (max 20 words) analyzing performance
 Low rate → suggest improvement. High rate → encourage.
 No quotation marks. No hashtags. Return ONLY the sentence.`;
 
-    const insight = await askGemini(prompt, 0.5);
+    const insight = await askGroq(prompt, 0.5);
 
     return NextResponse.json({
       insight: insight.trim() || "Keep striving for greatness every single day.",

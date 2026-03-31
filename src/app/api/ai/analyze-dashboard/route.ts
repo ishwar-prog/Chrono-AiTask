@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import { askGemini } from "@/lib/gemini";
+import { askGroq } from "@/lib/groq";
 
 export async function POST() {
   try {
@@ -59,7 +59,7 @@ RULES:
 - Sort by: Urgent > High > Medium > Low, then by nearest deadline.
 - Return ONLY the markdown, no extra commentary.`;
 
-    const analysisText = await askGemini(prompt, 0.4);
+    const analysisText = await askGroq(prompt, 0.4);
 
     return NextResponse.json({
       analysis: analysisText || "No analysis could be completed.",

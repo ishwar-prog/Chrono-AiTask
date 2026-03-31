@@ -1,23 +1,11 @@
 import type { Metadata } from "next";
-import { Lilita_One, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 
-const lilitaOne = Lilita_One({
-  variable: "--font-lilita-one",
-  weight: "400",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "ChronoTask clone",
-  description: "AI Powered Task Management Clone",
+  title: "Chrono-AiTask",
+  description: "AI Powered Task Management",
 };
 
 export default function RootLayout({
@@ -27,8 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Acme&display=swap" rel="stylesheet" />
+      </head>
       <body
-        className={`${lilitaOne.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-background text-foreground selection:bg-primary selection:text-white`}
+        className={`font-sans antialiased min-h-screen bg-background text-foreground selection:bg-primary selection:text-white`}
       >
         <AuthProvider>
           <ThemeProvider
