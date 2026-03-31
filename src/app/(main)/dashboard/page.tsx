@@ -1,15 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CartoonCard } from "@/components/CartoonCard";
+import { useSession } from "next-auth/react";
 import { CartoonButton } from "@/components/CartoonButton";
-import { CartoonBadge } from "@/components/CartoonBadge";
-import { Bot, Zap } from "lucide-react";
-import { ITask } from "@/models/Task";
+import { Brain, CheckSquare, Clock, AlertTriangle, Sparkles, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
+import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+
+interface ITask {
+  _id: string;
+  title: string;
+  description?: string;
+  status: "pending" | "completed" | "overdue";
+  priority: "High" | "Medium" | "Low";
+  deadline?: string;
+  aiScore: number;
+}
 
 export default function Dashboard() {
+  const { data: session } = useSession();
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -17,21 +30,37 @@ export default function Dashboard() {
 
   const fetchTasks = async () => {
     const res = await fetch("/api/tasks");
-    const data = await res.json();
     if (res.ok) {
+      const data = await res.json();
       setTasks(data);
     }
   };
 
   const handleAnalyze = async () => {
     setAnalyzing(true);
-    const res = await fetch("/api/ai/analyze-priority", { method: "POST" });
-    if (res.ok) {
-      await fetchTasks();
-    } else {
-      alert("Failed to analyze priority.");
+    setAnalysisResult(null);
+    try {
+      const res = await fetch("/api/ai/analyze-dashboard", { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalysisResult(data.analysis);
+        await fetchTasks(); // refresh scores
+      } else {
+        alert("Failed to run AI priority logic.");
+      }
+    } catch (e) {
+      console.error(e);
     }
     setAnalyzing(false);
+  };
+
+  const completeTask = async (id: string) => {
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "completed" }),
+    });
+    if (res.ok) fetchTasks();
   };
 
   const mapStatusCounts = () => {
@@ -46,7 +75,8 @@ export default function Dashboard() {
 
   const stats = mapStatusCounts();
 
-  const nextBestTask = tasks
+  // Pick highest scoring non-completed task
+  const nextBestTask = [...tasks]
     .filter((t) => t.status !== "completed")
     .sort((a, b) => b.aiScore - a.aiScore)[0];
 
@@ -54,88 +84,187 @@ export default function Dashboard() {
   const doLater = tasks.filter(t => t.status !== "completed" && t.status !== "overdue" && t.priority !== "High");
   const overdueTasksList = tasks.filter(t => t.status === "overdue");
 
+  const userName = session?.user?.email?.split('@')[0] || "User";
+
   return (
-    <div className="space-y-8 animate-in fade-in transition-all">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-3xl font-black uppercase tracking-tight">Dashboard</h1>
+    <div className="space-y-6 animate-in fade-in transition-all pb-12 w-full max-w-6xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-black uppercase tracking-tight text-black dark:text-white">DASHBOARD</h1>
+        <p className="text-gray-500 font-bold ml-1">Welcome back, {userName} 👋</p>
       </div>
 
+      {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <CartoonCard className="bg-green-100 dark:bg-green-900 border-green-800 flex flex-col items-center justify-center p-6 transition-transform hover:-translate-y-1">
-          <span className="text-sm font-bold uppercase text-green-800 dark:text-green-300">Completed</span>
-          <span className="text-5xl font-black text-green-900 dark:text-green-100 mt-2">{stats.completed}</span>
-        </CartoonCard>
-        <CartoonCard className="bg-blue-100 dark:bg-blue-900 border-blue-800 flex flex-col items-center justify-center p-6 transition-transform hover:-translate-y-1">
-          <span className="text-sm font-bold uppercase text-blue-800 dark:text-blue-300">Pending</span>
-          <span className="text-5xl font-black text-blue-900 dark:text-blue-100 mt-2">{stats.pending}</span>
-        </CartoonCard>
-        <CartoonCard className="bg-red-100 dark:bg-red-900 border-red-800 flex flex-col items-center justify-center p-6 transition-transform hover:-translate-y-1">
-          <span className="text-sm font-bold uppercase text-red-800 dark:text-red-300">Overdue</span>
-          <span className="text-5xl font-black text-red-900 dark:text-red-100 mt-2">{stats.overdue}</span>
-        </CartoonCard>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <CartoonCard className="flex flex-col h-full bg-purple-50 dark:bg-slate-800 relative overflow-hidden">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-purple-500 w-10 h-10 rounded-full flex items-center justify-center border-2 border-black">
-              <Bot className="text-white w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-black uppercase tracking-tight">Next Best Task</h2>
+        {/* COMPLETED */}
+        <div className="flex items-center p-6 bg-[#0E1514] border-2 border-[#A3E635] rounded-xl shadow-[4px_4px_0_0_#A3E635]">
+          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
+            <CheckSquare className="text-white w-6 h-6" />
           </div>
-          {nextBestTask ? (
-            <div className="flex-1 flex flex-col justify-between">
-              <div>
-                <p className="font-bold text-lg">{nextBestTask.title}</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{nextBestTask.description}</p>
-                <div className="flex gap-2 mt-3">
-                  <CartoonBadge variant={nextBestTask.priority === "High" ? "error" : "warning"}>
-                    {nextBestTask.priority}
-                  </CartoonBadge>
-                  <CartoonBadge variant="info">AI Score: {nextBestTask.aiScore?.toFixed(2)}</CartoonBadge>
-                </div>
-              </div>
-              <div className="mt-6">
-                <CartoonButton label="COMPLETE" color="bg-purple-300" className="w-full" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <p className="font-bold text-neutral-500">No tasks pending!</p>
-            </div>
-          )}
-        </CartoonCard>
+          <div className="flex flex-col">
+            <span className="text-4xl font-black text-white">{stats.completed}</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#A3E635]">COMPLETED</span>
+          </div>
+        </div>
 
-        <CartoonCard className="flex flex-col h-full justify-center items-center text-center">
-          <Zap className="w-12 h-12 text-yellow-500 mb-4" />
-          <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Priority Analysis</h2>
-          <p className="font-bold text-neutral-600 dark:text-neutral-400 mb-6">Let our AI analyze your tasks and assign smart priority scores.</p>
-          <CartoonButton 
-            label={analyzing ? "ANALYZING..." : "ANALYZE NOW"} 
-            color="bg-yellow-400" 
-            onClick={handleAnalyze} 
-            disabled={analyzing} 
-            className="w-full max-w-xs"
-          />
-        </CartoonCard>
-      </div>
-      
-      {/* Simple lists rendering */}
-      <h2 className="text-2xl font-black uppercase mt-12 mb-4">Task Overview</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="space-y-4">
-          <h3 className="font-black bg-blue-100 dark:bg-blue-900 border-2 border-black inline-block px-3 py-1 -skew-x-6">DO TODAY</h3>
-          {doToday.map(t => <div key={t._id as unknown as string} className="p-3 border-2 border-black bg-white dark:bg-slate-700 shadow-[2px_2px_0_0_#000] rounded-xl font-bold">{t.title}</div>)}
+        {/* PENDING */}
+        <div className="flex items-center p-6 bg-[#0F172A] border-2 border-[#93C5FD] rounded-xl shadow-[4px_4px_0_0_#93C5FD]">
+          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
+            <Clock className="text-white w-6 h-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-4xl font-black text-white">{stats.pending}</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#93C5FD]">PENDING</span>
+          </div>
         </div>
-        <div className="space-y-4">
-          <h3 className="font-black bg-gray-200 dark:bg-slate-600 border-2 border-black inline-block px-3 py-1 -skew-x-6">DO LATER</h3>
-          {doLater.map(t => <div key={t._id as unknown as string} className="p-3 border-2 border-black bg-white dark:bg-slate-700 shadow-[2px_2px_0_0_#000] rounded-xl font-bold">{t.title}</div>)}
-        </div>
-        <div className="space-y-4">
-          <h3 className="font-black bg-red-200 dark:bg-red-800 border-2 border-black inline-block px-3 py-1 -skew-x-6">OVERDUE</h3>
-          {overdueTasksList.map(t => <div key={t._id as unknown as string} className="p-3 border-2 border-black bg-white dark:bg-slate-700 shadow-[2px_2px_0_0_#000] rounded-xl font-bold">{t.title}</div>)}
+
+        {/* OVERDUE */}
+        <div className="flex items-center p-6 bg-[#2B0F13] border-2 border-[#FDA4AF] rounded-xl shadow-[4px_4px_0_0_#FDA4AF]">
+          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
+            <AlertTriangle className="text-white w-6 h-6" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-4xl font-black text-white">{stats.overdue}</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#FDA4AF]">OVERDUE</span>
+          </div>
         </div>
       </div>
+
+      {/* AI Recommendation Box */}
+      {nextBestTask && (
+        <div className="bg-[#2a1711] border-2 border-[#FFD29D] rounded-xl shadow-[4px_4px_0_0_#FFD29D] p-6 lg:px-8 mt-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4 flex-1">
+            {/* Orange Brain Icon */}
+            <div className="bg-[#F97316] w-12 h-12 rounded-xl border-2 border-[#fff] shadow-[2px_2px_0_0_#000] flex items-center justify-center shrink-0">
+              <Brain className="text-white w-6 h-6" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-white font-black uppercase text-xl leading-none">AI RECOMMENDATION</h2>
+              <p className="text-gray-400 font-bold text-sm mb-4">Next Best Task</p>
+              
+              <h3 className="text-white font-black uppercase text-2xl tracking-tight mb-2 line-clamp-1">{nextBestTask.title}</h3>
+              <div className="flex items-center gap-3">
+                <span className="bg-[#F97316] text-white text-xs font-bold px-2 py-0.5 rounded-full lowercase shadow-sm">
+                  {nextBestTask.priority}
+                </span>
+                {nextBestTask.deadline && (
+                  <span className="text-gray-300 text-sm font-semibold">
+                    Due {format(new Date(nextBestTask.deadline), "MMM d, h:mm a")}
+                  </span>
+                )}
+                <span className="text-gray-400 text-sm font-semibold">
+                  Score: {nextBestTask.aiScore?.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="md:pl-8">
+            <button 
+              onClick={() => completeTask(nextBestTask._id)}
+              className="px-8 py-3 rounded-full border-2 border-white font-black text-lg text-white bg-[#F97316] hover:bg-[#ea580c] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff]"
+            >
+              COMPLETE
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* AI Analysis Block */}
+      <div className={`bg-[#20101b] border-2 border-[#F9A8D4] rounded-xl shadow-[4px_4px_0_0_#F9A8D4] p-6 mt-4 transition-all duration-300`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <Sparkles className="text-[#ec4899] w-8 h-8 shrink-0" strokeWidth={2.5} />
+            <div>
+              <h2 className="text-white font-black uppercase text-xl leading-none">AI ANALYSIS</h2>
+              <p className="text-gray-400 font-bold text-sm">Get AI-powered priority suggestions</p>
+            </div>
+          </div>
+          <button 
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="px-8 py-3 rounded-full border-2 border-white font-black text-lg text-white bg-[#ec4899] hover:bg-[#db2777] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff] shrink-0"
+          >
+            {analyzing ? "ANALYZING..." : "ANALYZE"}
+          </button>
+        </div>
+        
+        {/* Render Markdown result below inside the box if active */}
+        {analysisResult && (
+          <div className="mt-8 pt-6 border-t border-[#F9A8D4]/30 prose prose-invert prose-p:font-semibold prose-a:text-pink-400 prose-strong:text-pink-200 max-w-none">
+            <ReactMarkdown>{analysisResult}</ReactMarkdown>
+          </div>
+        )}
+      </div>
+
+      {/* Lower task grids */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        {/* DO TODAY */}
+        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
+          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+            <span>🔥</span> DO TODAY
+          </h3>
+          {doToday.length === 0 ? (
+            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+          ) : (
+            <ul className="space-y-3">
+              {doToday.slice(0, 5).map(t => (
+                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                  <span className="text-gray-500 mt-0.5">•</span> 
+                  <span className="line-clamp-2">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* DO LATER */}
+        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
+          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+            <span>📝</span> DO LATER
+          </h3>
+          {doLater.length === 0 ? (
+            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+          ) : (
+            <ul className="space-y-3">
+              {doLater.slice(0, 5).map(t => (
+                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                  <span className="text-gray-500 mt-0.5">•</span> 
+                  <span className="line-clamp-2">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* OVERDUE */}
+        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
+          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+            <span className="text-[#fbbf24]">⚠️</span> OVERDUE
+          </h3>
+          {overdueTasksList.length === 0 ? (
+            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+          ) : (
+            <ul className="space-y-3">
+              {overdueTasksList.slice(0, 5).map(t => (
+                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                  <span className="text-gray-500 mt-0.5">•</span> 
+                  <span className="line-clamp-2">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* VIEW ALL CTA */}
+      <div className="pt-2">
+        <Link href="/tasks">
+          <button className="px-6 py-3 rounded-xl border-2 border-white font-black text-white bg-[#0EA5E9] hover:bg-[#0284c7] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff] flex items-center gap-2">
+            VIEW ALL TASKS <ChevronRight className="w-5 h-5" />
+          </button>
+        </Link>
+      </div>
+
     </div>
   );
 }
