@@ -53,9 +53,12 @@ export async function POST(req: Request) {
     const content = response.choices[0].message?.content || "[]";
     let scores = [];
     try {
-      scores = JSON.parse(content);
+      const match = content.match(/\[.*\]/s);
+      const jsonStr = match ? match[0] : content;
+      scores = JSON.parse(jsonStr);
     } catch (e) {
-      throw new Error("Failed to parse AI response");
+      console.error("Parse Error Content:", content);
+      throw new Error("Failed to parse AI response JSON");
     }
 
     // Bulk update tasks with their new scores

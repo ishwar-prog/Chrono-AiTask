@@ -24,16 +24,37 @@ export async function GET(_req: Request) {
     const bulkOps = [];
 
     for (const task of userTasks) {
-      // 1. Auto resolve Overdues
-      if (task.status === "pending" && task.deadline && new Date(task.deadline) < now) {
-        task.status = "overdue";
-        bulkOps.push({
-          updateOne: {
-            filter: { _id: task._id },
-            update: { $set: { status: "overdue" } }
-          }
-        });
-        updatesMade = true;
+      // 1. Auto resolve Overdues & Escalate Priorities based on Time
+      if (task.status === "pending" && task.deadline) {
+        const timeDiff = new Date(task.deadline).getTime() - now.getTime();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+
+        let requiredPriority = task.priority;
+        let newStatus = task.status;
+
+        // Determine Escalation logic mathematically
+        if (timeDiff < 0) {
+           requiredPriority = "Urgent";
+           newStatus = "overdue";
+        } else if (timeDiff <= TWENTY_FOUR_HOURS) {
+           if (task.priority === "Low" || task.priority === "Medium") requiredPriority = "High";
+        } else if (timeDiff <= FORTY_EIGHT_HOURS) {
+           if (task.priority === "Low") requiredPriority = "Medium";
+        }
+
+        if (requiredPriority !== task.priority || newStatus !== task.status) {
+            task.priority = requiredPriority;
+            task.status = newStatus;
+            
+            bulkOps.push({
+              updateOne: {
+                filter: { _id: task._id },
+                update: { $set: { status: newStatus, priority: requiredPriority } }
+              }
+            });
+            updatesMade = true;
+        }
       }
 
       // 2. Logic to auto-spawn recurrences (simplistic logic: create a new task instance for today if it doesn't exist)
@@ -108,11 +129,19 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
 
+    let parsedDeadline = undefined;
+    if (deadline && typeof deadline === "string" && deadline.trim() !== "") {
+      const d = new Date(deadline);
+      if (!isNaN(d.getTime())) {
+        parsedDeadline = d;
+      }
+    }
+
     const newTask = await Task.create({
       title,
       description,
       priority: priority || "Medium",
-      deadline: deadline ? new Date(deadline) : undefined,
+      deadline: parsedDeadline,
       recurrence: recurrence || "none",
       // @ts-ignore
       user: session.user.id,

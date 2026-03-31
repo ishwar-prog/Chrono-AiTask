@@ -66,9 +66,15 @@ export async function POST(req: Request) {
     });
 
     const rawContent = response.choices[0].message?.content || "[]";
-    const cleanedString = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
-
-    const schedule = JSON.parse(cleanedString);
+    let schedule = [];
+    try {
+      const match = rawContent.match(/\[.*\]/s);
+      const jsonStr = match ? match[0] : rawContent;
+      schedule = JSON.parse(jsonStr);
+    } catch(e) {
+      console.error("Scheduler Parse Error Content:", rawContent);
+      throw new Error("Failed to parse AI schedule JSON");
+    }
 
     return NextResponse.json({ schedule });
   } catch (error: any) {

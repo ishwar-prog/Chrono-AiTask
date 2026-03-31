@@ -157,11 +157,9 @@ export default function TasksPage() {
                   <CartoonBadge variant={task.priority === "Urgent" ? "error" : task.priority === "High" ? "warning" : "default"}>
                     {task.priority}
                   </CartoonBadge>
-                  {task.recurrence !== "none" && (
-                    <CartoonBadge variant="info">
-                      🔁 {task.recurrence === "daily" ? "Everyday" : "Mon-Fri"}
-                    </CartoonBadge>
-                  )}
+                  <CartoonBadge variant="info">
+                    {task.recurrence === "daily" ? "🔁 Everyday" : task.recurrence === "weekdays" ? "🔁 Mon-Fri" : "📌 Onetime Task"}
+                  </CartoonBadge>
                   {task.deadline && (
                     <CartoonBadge variant="default">
                       {format(new Date(task.deadline), "MMM dd, h:mm a")}

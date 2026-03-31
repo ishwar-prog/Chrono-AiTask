@@ -57,6 +57,7 @@ export async function POST(_req: Request) {
       Let's crush these! 💪
       
       Always adapt the names, dates, and reasoning dynamically based on the Tasks List provided above. 
+      CRITICAL RULE: A task is ONLY considered an immediate 'DO TODAY' action if its deadline is strictly within 48 hours from right now. Separate the 'Smart Order for Today' securely based on this 48-hour time constraint!
       Do NOT include any external text other than the exact markdown structure shown.
     `;
 
@@ -76,6 +77,15 @@ export async function POST(_req: Request) {
     return NextResponse.json({ analysis: analysisText });
   } catch (error: any) {
     console.error("Dashboard Analysis Error:", error);
+    
+    // Explicitly check for quota limit failure
+    if (error.status === 429 || error?.error?.code === "insufficient_quota") {
+      return NextResponse.json(
+        { message: "API limit reached. Please update your API key." }, 
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

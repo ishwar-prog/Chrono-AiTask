@@ -80,18 +80,38 @@ export default function Dashboard() {
     .filter((t) => t.status !== "completed")
     .sort((a, b) => b.aiScore - a.aiScore)[0];
 
-  const doToday = tasks.filter(t => t.status !== "completed" && t.status !== "overdue" && t.priority === "High");
-  const doLater = tasks.filter(t => t.status !== "completed" && t.status !== "overdue" && t.priority !== "High");
+  // Calculate < 48 hours for DO TODAY
+  const now = new Date().getTime();
+  const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+
+  const doToday = tasks.filter(t => {
+    if (t.status === "completed" || t.status === "overdue") return false;
+    if (!t.deadline) return false;
+    const timeDiff = new Date(t.deadline).getTime() - now;
+    return timeDiff >= 0 && timeDiff <= FORTY_EIGHT_HOURS;
+  });
+
+  const doLater = tasks.filter(t => {
+    if (t.status === "completed" || t.status === "overdue") return false;
+    if (!t.deadline) return true; // tasks without a deadline intuitively go to do later
+    const timeDiff = new Date(t.deadline).getTime() - now;
+    return timeDiff > FORTY_EIGHT_HOURS;
+  });
+
   const overdueTasksList = tasks.filter(t => t.status === "overdue");
 
-  const userName = session?.user?.email?.split('@')[0] || "User";
+  // Format greeting
+  // @ts-ignore
+  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || "User";
+  const greetings = ["Welcome back", "Ready to crush it", "Hello", "Let's get to work"];
+  const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
 
   return (
     <div className="space-y-6 animate-in fade-in transition-all pb-12 w-full max-w-6xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-4xl font-black uppercase tracking-tight text-black dark:text-white">DASHBOARD</h1>
-        <p className="text-gray-500 font-bold ml-1">Welcome back, {userName} 👋</p>
+        <p className="text-gray-500 font-bold ml-1">{randomGreeting}, {userName} 🚀</p>
       </div>
 
       {/* Stats Row */}

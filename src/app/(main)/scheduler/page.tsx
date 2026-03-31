@@ -16,6 +16,9 @@ export default function SchedulerPage() {
   const [loading, setLoading] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
   
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ start: "", end: "", title: "" });
+  
   const [routine, setRoutine] = useState({
     wakeTime: "07:00",
     workStart: "09:00",
@@ -51,6 +54,20 @@ export default function SchedulerPage() {
       case "high": return "border-orange-500";
       case "medium": return "border-blue-500";
       default: return "border-pink-500";
+    }
+  };
+
+  const handleEdit = (idx: number, block: ScheduleBlock) => {
+    setEditingIndex(idx);
+    setEditForm({ start: block.start, end: block.end, title: block.title });
+  };
+
+  const saveEdit = () => {
+    if (editingIndex !== null) {
+      const updated = [...schedule];
+      updated[editingIndex] = { ...updated[editingIndex], ...editForm };
+      setSchedule(updated);
+      setEditingIndex(null);
     }
   };
 
@@ -164,25 +181,50 @@ export default function SchedulerPage() {
                 {schedule.map((block, idx) => (
                   <div key={idx} className={`relative bg-[#1f2030] p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row md:items-center gap-4 border-l-4 ${priorityColor(block.priority)}`}>
                     
-                    {/* Time Window */}
-                    <div className="flex flex-col border-r border-gray-600 pr-6 min-w-[80px]">
-                      <span className="text-[#F97316] font-black text-lg">{block.start}</span>
-                      <span className="text-gray-400 font-bold text-sm">{block.end}</span>
-                    </div>
-                    
-                    {/* Title & Detail */}
-                    <div className="flex-1 flex flex-col">
-                      <div className="text-white font-black uppercase text-lg flex items-center gap-2">
-                         {block.type === "break" ? "🚶" : "💻"} {block.title}
+                    {editingIndex === idx ? (
+                      <div className="flex-1 flex flex-col md:flex-row gap-4 w-full">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs text-gray-400 font-bold uppercase">Start</label>
+                          <input type="time" value={editForm.start} onChange={e => setEditForm({...editForm, start: e.target.value})} className="bg-black text-white px-2 py-1 rounded" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs text-gray-400 font-bold uppercase">End</label>
+                          <input type="time" value={editForm.end} onChange={e => setEditForm({...editForm, end: e.target.value})} className="bg-black text-white px-2 py-1 rounded" />
+                        </div>
+                        <div className="flex flex-col gap-2 flex-1">
+                          <label className="text-xs text-gray-400 font-bold uppercase">Title</label>
+                          <input type="text" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} className="bg-black text-white px-2 py-1 rounded w-full" />
+                        </div>
+                        <div className="flex items-end pb-1 gap-2">
+                          <button onClick={saveEdit} className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-4 rounded">Save</button>
+                          <button onClick={() => setEditingIndex(null)} className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded">Cancel</button>
+                        </div>
                       </div>
-                      <div className="text-gray-400 text-xs font-bold flex items-center gap-2 mt-1">
-                        <Clock className="w-3 h-3" /> {block.duration} • <span className="lowercase">{block.priority}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="text-gray-500 mt-2 md:mt-0">
-                       <Clock className="w-5 h-5" />
-                    </div>
+                    ) : (
+                      <>
+                        {/* Time Window */}
+                        <div className="flex flex-col border-r border-gray-600 pr-6 min-w-[80px]">
+                          <span className="text-[#F97316] font-black text-lg">{block.start}</span>
+                          <span className="text-gray-400 font-bold text-sm">{block.end}</span>
+                        </div>
+                        
+                        {/* Title & Detail */}
+                        <div className="flex-1 flex flex-col">
+                          <div className="text-white font-black uppercase text-lg flex items-center gap-2 pr-8">
+                             {block.type === "break" ? "🚶" : "💻"} {block.title}
+                          </div>
+                          <div className="text-gray-400 text-xs font-bold flex items-center gap-2 mt-1">
+                            <Clock className="w-3 h-3" /> {block.duration} • <span className="lowercase">{block.priority}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="absolute top-4 right-4 text-gray-500 flex gap-2">
+                           <button onClick={() => handleEdit(idx, block)} className="hover:text-blue-400 transition-colors">
+                             <Edit className="w-5 h-5" />
+                           </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
