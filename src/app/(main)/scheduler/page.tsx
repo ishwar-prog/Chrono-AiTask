@@ -112,34 +112,34 @@ export default function SchedulerPage() {
   ] as const;
 
   return (
-    <div className="space-y-8 animate-in fade-in transition-all w-full max-w-7xl mx-auto px-4">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in transition-all w-full max-w-7xl mx-auto md:px-4">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-black uppercase tracking-tight text-white flex items-center gap-3">
+        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black dark:text-white flex items-center gap-3">
           <span className="text-pink-500">🤖</span> AI SCHEDULER
         </h1>
-        <p className="text-gray-400 font-bold ml-12">AI-optimized daily execution plan</p>
+        <p className="text-gray-600 dark:text-gray-400 font-bold ml-11 md:ml-12 text-sm md:text-base">AI-optimized daily execution plan</p>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-8">
+      <div className="flex flex-col xl:flex-row gap-6 md:gap-8 pb-12">
         {/* Left Pane: Routine */}
         <div className="w-full xl:w-5/12 space-y-4">
-          <div className="bg-[#1A1A24] border-2 border-[#D1D5DB] rounded-2xl p-6 shadow-[6px_6px_0_0_#D1D5DB]">
-            <div className="flex justify-between items-center mb-8 border-b-2 border-gray-700 pb-4">
-              <h2 className="text-white font-black uppercase tracking-widest text-lg flex items-center gap-2">
-                <Settings className="w-5 h-5 text-gray-400" /> DAILY ROUTINE
+          <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff]">
+            <div className="flex justify-between items-center mb-6 border-b-2 border-black/10 dark:border-white/10 pb-4">
+              <h2 className="text-black dark:text-white font-black uppercase tracking-widest text-base md:text-lg flex items-center gap-2">
+                <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" /> DAILY ROUTINE
               </h2>
               {isEditingRoutine ? (
                 <div className="flex gap-2">
                   <button
                     onClick={saveRoutine}
-                    className="px-4 py-1.5 rounded-full border-2 border-green-500 text-green-400 font-black uppercase hover:bg-green-500 hover:text-black transition-all text-sm"
+                    className="px-4 py-1.5 rounded-xl border-2 border-black dark:border-white text-black dark:text-white bg-[#A3E635] dark:bg-emerald-600 font-black uppercase hover:-translate-y-0.5 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] active:translate-y-0 active:shadow-none transition-all text-xs md:text-sm"
                   >
                     SAVE
                   </button>
                   <button
                     onClick={cancelRoutineEdit}
-                    className="px-4 py-1.5 rounded-full border-2 border-red-500 text-red-400 font-black uppercase hover:bg-red-500 hover:text-white transition-all text-sm"
+                    className="px-4 py-1.5 rounded-xl border-2 border-black dark:border-white text-white font-black uppercase bg-[#ef4444] dark:bg-red-600 hover:-translate-y-0.5 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] active:translate-y-0 active:shadow-none transition-all text-xs md:text-sm"
                   >
                     CANCEL
                   </button>
@@ -147,20 +147,20 @@ export default function SchedulerPage() {
               ) : (
                 <button
                   onClick={startEditRoutine}
-                  className="px-5 py-1.5 rounded-full border-2 border-white text-white font-black uppercase hover:bg-white hover:text-black hover:-translate-y-0.5 shadow-[2px_2px_0_0_#fff] active:translate-y-0 active:shadow-none transition-all"
+                  className="px-4 py-1.5 rounded-xl border-2 border-black dark:border-white text-black dark:text-white bg-white dark:bg-slate-700 font-black uppercase hover:bg-gray-100 dark:hover:bg-slate-600 hover:-translate-y-0.5 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] active:translate-y-0 active:shadow-none transition-all text-xs md:text-sm"
                 >
                   EDIT
                 </button>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pb-6">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 pb-2">
               {routineFields.map((field) => (
                 <div
                   key={field.key}
-                  className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center"
+                  className="bg-[#F4EFE6] dark:bg-slate-700/50 p-3 md:p-4 rounded-xl flex flex-col items-center justify-center text-center"
                 >
-                  <span className="text-gray-400 text-xs font-bold uppercase mb-2">
+                  <span className="text-gray-600 dark:text-gray-400 text-[10px] md:text-xs font-bold uppercase mb-1">
                     {field.label}
                   </span>
                   {isEditingRoutine ? (
@@ -170,10 +170,10 @@ export default function SchedulerPage() {
                       onChange={(e) =>
                         setRoutineDraft({ ...routineDraft, [field.key]: e.target.value })
                       }
-                      className="bg-black text-white text-center text-xl font-black px-2 py-1 rounded border border-gray-600 w-full max-w-[120px] focus:border-pink-500 outline-none"
+                      className="bg-white dark:bg-slate-900 border-2 border-black dark:border-white text-black dark:text-white text-center text-lg md:text-xl font-black px-2 py-1 rounded-lg w-full max-w-[120px] focus:ring-2 ring-pink-500 outline-none"
                     />
                   ) : (
-                    <span className="text-2xl font-black text-white">{routine[field.key]}</span>
+                    <span className="text-xl md:text-2xl font-black text-black dark:text-white">{routine[field.key]}</span>
                   )}
                 </div>
               ))}
@@ -183,12 +183,12 @@ export default function SchedulerPage() {
           <button
             onClick={generateTimetable}
             disabled={loading}
-            className="w-full py-5 rounded-2xl border-2 border-white font-black text-2xl text-white bg-[#E83E8C] hover:bg-[#D81B60] transition-transform shadow-[6px_6px_0_0_#D1D5DB] hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#D1D5DB] active:translate-y-0 active:shadow-none flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full py-4 md:py-5 rounded-2xl border-2 border-black dark:border-white font-black text-xl md:text-2xl text-white bg-[#d946ef] dark:bg-[#c026d3] hover:bg-[#c026d3] transition-transform shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] dark:hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-none flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <Clock className="animate-spin w-8 h-8" />
+              <Clock className="animate-spin w-6 h-6 md:w-8 md:h-8" />
             ) : (
-              <Rocket className="w-8 h-8" strokeWidth={2.5} />
+              <Rocket className="w-6 h-6 md:w-8 md:h-8" strokeWidth={2.5} />
             )}
             {loading ? "GENERATING..." : "RUN AI SCHEDULER"}
           </button>
@@ -196,31 +196,32 @@ export default function SchedulerPage() {
 
         {/* Right Pane: Timetable */}
         <div className="w-full xl:w-7/12">
-          <div className="bg-[#1A1A24] border-2 border-[#D1D5DB] rounded-2xl p-6 shadow-[6px_6px_0_0_#D1D5DB] min-h-[600px]">
-            <h2 className="text-white font-black uppercase tracking-widest text-lg flex items-center gap-2 mb-8 border-b-2 border-gray-700 pb-4">
-              <Clock className="w-5 h-5 text-gray-400" /> SMART TIMETABLE
+          <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] min-h-[400px]">
+            <h2 className="text-black dark:text-white font-black uppercase tracking-widest text-base md:text-lg flex items-center gap-2 mb-6 border-b-2 border-black/10 dark:border-white/10 pb-4">
+              <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" /> SMART TIMETABLE
             </h2>
 
             {/* Error message */}
             {error && !loading && (
-              <div className="mb-6 p-4 bg-red-500/10 border-2 border-red-500 rounded-xl">
-                <p className="text-red-400 font-bold text-sm">{error}</p>
+              <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 border-2 border-red-500 rounded-xl">
+                <p className="text-red-600 dark:text-red-400 font-bold text-sm">{error}</p>
               </div>
             )}
 
             {/* Empty state */}
             {schedule.length === 0 && !loading && !error && (
-              <div className="text-center py-20 text-gray-500">
-                <Target className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="font-bold text-lg">Push the pink button to generate your day!</p>
+              <div className="text-center py-12 md:py-20 bg-[#FCE7F3] dark:bg-pink-950 rounded-xl border-2 border-black dark:border-white shadow-[auto]">
+                <Target className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-[#ec4899]" />
+                <h3 className="font-black text-black dark:text-white text-lg md:text-xl uppercase">Ready to Optimize</h3>
+                <p className="font-bold text-sm text-gray-600 dark:text-gray-400">Click &quot;Run AI Scheduler&quot; to get your plan.</p>
               </div>
             )}
 
             {/* Loading state */}
             {loading && (
-              <div className="text-center py-20 text-gray-500 animate-pulse">
-                <Clock className="w-16 h-16 mx-auto mb-4 animate-spin text-[#E83E8C]" />
-                <p className="font-bold text-lg text-[#E83E8C]">
+              <div className="text-center py-12 md:py-20 bg-[#FCE7F3] dark:bg-pink-950 rounded-xl border-2 border-black dark:border-white animate-pulse">
+                <Clock className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 animate-spin text-[#d946ef]" />
+                <p className="font-bold text-black dark:text-white text-base md:text-lg">
                   Synthesizing optimum blocks...
                 </p>
               </div>

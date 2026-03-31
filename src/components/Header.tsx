@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Bell, AlertTriangle, Hourglass, CheckCircle2 } from "lucide-react";
+import { Bell, AlertTriangle, Hourglass, CheckCircle2, Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { format } from "date-fns";
 
@@ -14,14 +14,14 @@ interface TaskType {
   createdAt: string;
 }
 
-export function Header() {
+interface HeaderProps {
+  onOpenSidebar: () => void;
+}
+
+export function Header({ onOpenSidebar }: HeaderProps) {
   const [tasks, setTasks] = useState<TaskType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
 
   const fetchTasks = async () => {
     try {
@@ -34,6 +34,10 @@ export function Header() {
       console.error("Failed to fetch tasks for notifications");
     }
   };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,11 +80,21 @@ export function Header() {
   });
 
   return (
-    <header className="h-20 border-b-2 border-black dark:border-white bg-[#FCF9F1] dark:bg-slate-900 flex items-center justify-between px-8 shrink-0 relative z-50">
-      <div className="flex items-center space-x-4">
-        {/* Placeholder for left side elements if needed */}
+    <header className="h-20 border-b-2 border-black dark:border-white bg-[#FCF9F1] dark:bg-slate-900 flex items-center justify-between px-4 md:px-8 shrink-0 relative z-40 transition-colors duration-200">
+      <div className="flex items-center gap-3 md:gap-4">
+        {/* Mobile Hamburger */}
+        <button
+          onClick={onOpenSidebar}
+          className="md:hidden p-2 rounded-xl border-2 border-black dark:border-white shadow-[2px_2px_0px_0px_#000000] dark:shadow-[2px_2px_0px_0px_#ffffff] hover:-translate-y-0.5 transition-all bg-white dark:bg-slate-800 active:translate-y-0 active:shadow-none"
+        >
+          <Menu className="w-5 h-5 text-black dark:text-white" />
+        </button>
+        {/* Mobile Title */}
+        <h1 className="md:hidden text-2xl font-black tracking-tighter text-black dark:text-white uppercase leading-none mt-1">
+          CHRONOTASK
+        </h1>
       </div>
-      <div className="flex items-center space-x-6 relative" ref={dropdownRef}>
+      <div className="flex items-center space-x-3 md:space-x-6 relative" ref={dropdownRef}>
         
         {/* Bell Button */}
         <button 

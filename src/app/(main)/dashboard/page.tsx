@@ -116,73 +116,73 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {/* COMPLETED */}
-        <div className="flex items-center p-6 bg-[#0E1514] border-2 border-[#A3E635] rounded-xl shadow-[4px_4px_0_0_#A3E635]">
-          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
-            <CheckSquare className="text-white w-6 h-6" />
+        <div className="flex items-center p-4 md:p-6 bg-[#E5F0E8] dark:bg-emerald-950 border-2 border-black dark:border-white rounded-xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0 border-2 border-black dark:border-white rounded-xl bg-[#FCF9F1] dark:bg-slate-800 flex items-center justify-center mr-4 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff]">
+            <CheckSquare className="text-black dark:text-white w-7 h-7" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
-            <span className="text-4xl font-black text-white">{stats.completed}</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#A3E635]">COMPLETED</span>
+            <span className="text-3xl md:text-4xl font-black text-black dark:text-white leading-none">{stats.completed}</span>
+            <span className="text-[11px] md:text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 mt-1">COMPLETED</span>
           </div>
         </div>
 
         {/* PENDING */}
-        <div className="flex items-center p-6 bg-[#0F172A] border-2 border-[#93C5FD] rounded-xl shadow-[4px_4px_0_0_#93C5FD]">
-          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
-            <Clock className="text-white w-6 h-6" />
+        <div className="flex items-center p-4 md:p-6 bg-[#E0F2FE] dark:bg-cyan-950 border-2 border-black dark:border-white rounded-xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0 border-2 border-black dark:border-white rounded-xl bg-[#FCF9F1] dark:bg-slate-800 flex items-center justify-center mr-4 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff]">
+            <Clock className="text-black dark:text-white w-7 h-7" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
-            <span className="text-4xl font-black text-white">{stats.pending}</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#93C5FD]">PENDING</span>
+            <span className="text-3xl md:text-4xl font-black text-black dark:text-white leading-none">{stats.pending}</span>
+            <span className="text-[11px] md:text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 mt-1">PENDING</span>
           </div>
         </div>
 
         {/* OVERDUE */}
-        <div className="flex items-center p-6 bg-[#2B0F13] border-2 border-[#FDA4AF] rounded-xl shadow-[4px_4px_0_0_#FDA4AF]">
-          <div className="p-3 border-2 border-white rounded-xl bg-transparent flex items-center justify-center mr-4">
-            <AlertTriangle className="text-white w-6 h-6" />
+        <div className="flex items-center p-4 md:p-6 bg-[#FFEBEB] dark:bg-rose-950 border-2 border-black dark:border-white rounded-xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <div className="w-14 h-14 md:w-16 md:h-16 flex-shrink-0 border-2 border-black dark:border-white rounded-xl bg-[#FCF9F1] dark:bg-slate-800 flex items-center justify-center mr-4 shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff]">
+            <AlertTriangle className="text-black dark:text-white w-7 h-7" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col">
-            <span className="text-4xl font-black text-white">{stats.overdue}</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-[#FDA4AF]">OVERDUE</span>
+            <span className="text-3xl md:text-4xl font-black text-black dark:text-white leading-none">{stats.overdue}</span>
+            <span className="text-[11px] md:text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300 mt-1">OVERDUE</span>
           </div>
         </div>
       </div>
 
       {/* AI Recommendation Box */}
       {nextBestTask && (
-        <div className="bg-[#2a1711] border-2 border-[#FFD29D] rounded-xl shadow-[4px_4px_0_0_#FFD29D] p-6 lg:px-8 mt-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-[#FFF4E5] dark:bg-[rgb(43,23,0)] border-2 border-black dark:border-white rounded-xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] p-5 md:p-6 lg:px-8 mt-4 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all">
           <div className="flex items-start gap-4 flex-1">
             {/* Orange Brain Icon */}
-            <div className="bg-[#F97316] w-12 h-12 rounded-xl border-2 border-[#fff] shadow-[2px_2px_0_0_#000] flex items-center justify-center shrink-0">
+            <div className="bg-[#F97316] w-12 h-12 rounded-xl border-2 border-black dark:border-white shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff] flex items-center justify-center shrink-0">
               <Brain className="text-white w-6 h-6" strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-white font-black uppercase text-xl leading-none">AI RECOMMENDATION</h2>
-              <p className="text-gray-400 font-bold text-sm mb-4">Next Best Task</p>
+              <h2 className="text-black dark:text-white font-black uppercase text-lg md:text-xl leading-none">AI RECOMMENDATION</h2>
+              <p className="text-gray-600 dark:text-gray-400 font-bold text-sm mb-3">Next Best Task</p>
               
-              <h3 className="text-white font-black uppercase text-2xl tracking-tight mb-2 line-clamp-1">{nextBestTask.title}</h3>
-              <div className="flex items-center gap-3">
+              <h3 className="text-black dark:text-white font-black uppercase text-xl md:text-2xl tracking-tight mb-2 line-clamp-1">{nextBestTask.title}</h3>
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
                 <span className="bg-[#F97316] text-white text-xs font-bold px-2 py-0.5 rounded-full lowercase shadow-sm">
                   {nextBestTask.priority}
                 </span>
                 {nextBestTask.deadline && (
-                  <span className="text-gray-300 text-sm font-semibold">
+                  <span className="text-gray-700 dark:text-gray-300 text-xs md:text-sm font-semibold">
                     Due {format(new Date(nextBestTask.deadline), "MMM d, h:mm a")}
                   </span>
                 )}
-                <span className="text-gray-400 text-sm font-semibold">
+                <span className="text-gray-600 dark:text-gray-400 text-xs md:text-sm font-semibold">
                   Score: {nextBestTask.aiScore?.toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
-          <div className="md:pl-8">
+          <div className="md:pl-8 flex justify-end">
             <button 
               onClick={() => completeTask(nextBestTask._id)}
-              className="px-8 py-3 rounded-full border-2 border-white font-black text-lg text-white bg-[#F97316] hover:bg-[#ea580c] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff]"
+              className="px-6 md:px-8 py-3 w-full md:w-auto rounded-xl border-2 border-black dark:border-white font-black text-lg text-white bg-[#F97316] hover:bg-[#ea580c] transition-transform shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] dark:hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-none"
             >
               COMPLETE
             </button>
@@ -191,19 +191,19 @@ export default function Dashboard() {
       )}
 
       {/* AI Analysis Block */}
-      <div className={`bg-[#20101b] border-2 border-[#F9A8D4] rounded-xl shadow-[4px_4px_0_0_#F9A8D4] p-6 mt-4 transition-all duration-300`}>
+      <div className={`bg-[#FCE7F3] dark:bg-pink-950 border-2 border-black dark:border-white rounded-xl shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] p-5 md:p-6 mt-4 transition-all duration-300`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <Sparkles className="text-[#ec4899] w-8 h-8 shrink-0" strokeWidth={2.5} />
+            <Sparkles className="text-[#ec4899] dark:text-[#f472b6] w-8 h-8 shrink-0" strokeWidth={2.5} />
             <div>
-              <h2 className="text-white font-black uppercase text-xl leading-none">AI ANALYSIS</h2>
-              <p className="text-gray-400 font-bold text-sm">Get AI-powered priority suggestions</p>
+              <h2 className="text-black dark:text-white font-black uppercase text-lg md:text-xl leading-none">AI ANALYSIS</h2>
+              <p className="text-gray-600 dark:text-gray-400 font-bold text-sm">Get AI-powered priority suggestions</p>
             </div>
           </div>
           <button 
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="px-8 py-3 rounded-full border-2 border-white font-black text-lg text-white bg-[#ec4899] hover:bg-[#db2777] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff] shrink-0"
+            className="px-6 md:px-8 py-3 w-full md:w-auto rounded-xl border-2 border-black dark:border-white font-black text-lg text-white bg-[#ec4899] hover:bg-[#db2777] transition-transform shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] dark:hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-none shrink-0"
           >
             {isAnalyzing ? "ANALYZING..." : "ANALYZE"}
           </button>
@@ -211,25 +211,25 @@ export default function Dashboard() {
         
         {/* Render Markdown result below inside the box if active */}
         {analysisResult && (
-          <div className="mt-8 pt-6 border-t border-[#F9A8D4]/30 prose prose-invert prose-p:font-semibold prose-a:text-pink-400 prose-strong:text-pink-200 max-w-none">
+          <div className="mt-8 pt-6 border-t border-black/20 dark:border-white/20 prose prose-slate dark:prose-invert prose-p:font-semibold max-w-none">
             <ReactMarkdown>{analysisResult}</ReactMarkdown>
           </div>
         )}
       </div>
 
       {/* Lower task grids */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 pt-4">
         {/* DO TODAY */}
-        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
-          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-xl p-5 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] min-h-[220px]">
+          <h3 className="text-black dark:text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
             <span>🔥</span> DO TODAY
           </h3>
           {doToday.length === 0 ? (
-            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">No tasks</p>
           ) : (
             <ul className="space-y-3">
               {doToday.slice(0, 5).map(t => (
-                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                <li key={t._id} className="text-black dark:text-white font-bold text-sm flex items-start gap-2">
                   <span className="text-gray-500 mt-0.5">•</span> 
                   <span className="line-clamp-2">{t.title}</span>
                 </li>
@@ -239,16 +239,16 @@ export default function Dashboard() {
         </div>
 
         {/* DO LATER */}
-        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
-          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-xl p-5 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] min-h-[220px]">
+          <h3 className="text-black dark:text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
             <span>📝</span> DO LATER
           </h3>
           {doLater.length === 0 ? (
-            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">No tasks</p>
           ) : (
             <ul className="space-y-3">
               {doLater.slice(0, 5).map(t => (
-                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                <li key={t._id} className="text-black dark:text-white font-bold text-sm flex items-start gap-2">
                   <span className="text-gray-500 mt-0.5">•</span> 
                   <span className="line-clamp-2">{t.title}</span>
                 </li>
@@ -258,16 +258,16 @@ export default function Dashboard() {
         </div>
 
         {/* OVERDUE */}
-        <div className="bg-[#181C25] border-2 border-[#D1D5DB] rounded-xl p-5 shadow-[4px_4px_0_0_#D1D5DB] min-h-[220px]">
-          <h3 className="text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-xl p-5 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] min-h-[220px]">
+          <h3 className="text-black dark:text-white font-black uppercase text-lg mb-4 flex items-center gap-2">
             <span className="text-[#fbbf24]">⚠️</span> OVERDUE
           </h3>
           {overdueTasksList.length === 0 ? (
-            <p className="text-gray-400 font-bold text-sm">No tasks</p>
+            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">No tasks</p>
           ) : (
             <ul className="space-y-3">
               {overdueTasksList.slice(0, 5).map(t => (
-                <li key={t._id} className="text-white font-bold text-sm flex items-start gap-2">
+                <li key={t._id} className="text-black dark:text-white font-bold text-sm flex items-start gap-2">
                   <span className="text-gray-500 mt-0.5">•</span> 
                   <span className="line-clamp-2">{t.title}</span>
                 </li>
@@ -280,7 +280,7 @@ export default function Dashboard() {
       {/* VIEW ALL CTA */}
       <div className="pt-2">
         <Link href="/tasks">
-          <button className="px-6 py-3 rounded-xl border-2 border-white font-black text-white bg-[#0EA5E9] hover:bg-[#0284c7] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff] flex items-center gap-2">
+          <button className="px-6 md:px-8 py-3 w-full md:w-auto justify-center rounded-xl border-2 border-black dark:border-white font-black text-white bg-[#0EA5E9] hover:bg-[#0284c7] transition-transform shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] dark:hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-none flex items-center gap-2">
             VIEW ALL TASKS <ChevronRight className="w-5 h-5" />
           </button>
         </Link>

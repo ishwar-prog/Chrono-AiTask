@@ -85,24 +85,24 @@ export default function AnalyticsPage() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    color: '#fff',
+    color: '#6B7280', // Neutral gray
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9CA3AF' } },
-      y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9CA3AF' }, beginAtZero: true }
+      x: { grid: { color: 'rgba(156, 163, 175, 0.2)' }, ticks: { color: '#6B7280' } },
+      y: { grid: { color: 'rgba(156, 163, 175, 0.2)' }, ticks: { color: '#6B7280' }, beginAtZero: true }
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in transition-all pb-12 w-full max-w-7xl mx-auto px-4">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in transition-all pb-12 w-full max-w-7xl mx-auto md:px-4">
       
       {/* Top Header & Filter */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-black uppercase tracking-tight text-white">ANALYTICS</h1>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-black dark:text-white">ANALYTICS</h1>
         <select 
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="bg-[#181C25] border border-gray-600 text-white px-4 py-2 rounded-lg font-bold outline-none cursor-pointer hover:bg-gray-800 transition"
+          className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white text-black dark:text-white px-4 py-2 rounded-xl font-bold outline-none cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-[2px_2px_0_0_#000] dark:shadow-[2px_2px_0_0_#fff]"
         >
           <option value="7">Last 7 days</option>
           <option value="30">Last 30 days</option>
@@ -112,41 +112,41 @@ export default function AnalyticsPage() {
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
-          <span className="text-3xl mb-2">✅</span>
-          <span className="text-4xl font-black text-white">{completedCount}</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">COMPLETED</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <span className="text-3xl md:text-4xl mb-2">✅</span>
+          <span className="text-3xl md:text-4xl font-black text-black dark:text-white">{completedCount}</span>
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mt-1">COMPLETED</span>
         </div>
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
-          <span className="text-3xl mb-2">⏳</span>
-          <span className="text-4xl font-black text-white">{pendingCount}</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">PENDING</span>
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <span className="text-3xl md:text-4xl mb-2">⏳</span>
+          <span className="text-3xl md:text-4xl font-black text-black dark:text-white">{pendingCount}</span>
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mt-1">PENDING</span>
         </div>
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
-          <span className="text-3xl mb-2">🚨</span>
-          <span className="text-4xl font-black text-white">{overdueCount}</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">OVERDUE</span>
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <span className="text-3xl md:text-4xl mb-2">🚨</span>
+          <span className="text-3xl md:text-4xl font-black text-black dark:text-white">{overdueCount}</span>
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mt-1">OVERDUE</span>
         </div>
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
-          <span className="text-3xl mb-2">📊</span>
-          <span className="text-4xl font-black text-white">{completionRate}%</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">COMPLETION RATE</span>
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] transition-transform hover:-translate-y-1">
+          <span className="text-3xl md:text-4xl mb-2">📊</span>
+          <span className="text-3xl md:text-4xl font-black text-black dark:text-white">{completionRate}%</span>
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 mt-1">COMPLETION RATE</span>
         </div>
       </div>
 
       {/* Avg Completion Banner */}
-      <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-4 shadow-[4px_4px_0_0_#4B5563] text-gray-300 font-medium">
-        Avg completion time: <span className="text-white font-bold">{avgCompletionTime} days</span>
+      <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-xl p-4 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] text-gray-600 dark:text-gray-400 font-medium text-sm md:text-base">
+        Avg completion time: <span className="text-black dark:text-white font-black ml-1">{avgCompletionTime} days</span>
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         
         {/* Weekly Productivity Bar */}
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563]">
-          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">WEEKLY PRODUCTIVITY</h3>
-          <div className="h-64">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff]">
+          <h3 className="text-black dark:text-white font-black uppercase text-sm tracking-widest mb-6 border-b-2 border-black/10 dark:border-white/10 pb-4">WEEKLY PRODUCTIVITY</h3>
+          <div className="h-48 md:h-64">
             <Bar 
               data={{
                 labels,
@@ -163,9 +163,9 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Status Doughnut */}
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563]">
-          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">STATUS DISTRIBUTION</h3>
-          <div className="h-64 flex justify-center">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff]">
+          <h3 className="text-black dark:text-white font-black uppercase text-sm tracking-widest mb-6 border-b-2 border-black/10 dark:border-white/10 pb-4">STATUS DISTRIBUTION</h3>
+          <div className="h-48 md:h-64 flex justify-center">
             {totalCount > 0 ? (
               <Doughnut 
                 data={{
@@ -174,15 +174,15 @@ export default function AnalyticsPage() {
                     data: [completedCount, pendingCount, overdueCount],
                     backgroundColor: ['#22C55E', '#F97316', '#EF4444'],
                     borderWidth: 2,
-                    borderColor: '#181C25',
+                    borderColor: '#000', // Hardcoded black border for retro style
                   }]
                 }}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  color: '#fff',
+                  color: '#6B7280', // neutral label colors
                   plugins: { 
-                    legend: { display: true, position: 'right', labels: { color: '#9CA3AF', font: { weight: 'bold' } } } 
+                    legend: { display: true, position: 'right', labels: { color: '#6B7280', font: { weight: 'bold' } } } 
                   },
                   cutout: '65%'
                 }}
@@ -194,9 +194,9 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Completion Trends Line */}
-        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563] lg:col-span-2">
-          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">COMPLETION TRENDS</h3>
-          <div className="h-64">
+        <div className="bg-[#FCF9F1] dark:bg-slate-800 border-2 border-black dark:border-white rounded-2xl p-5 md:p-6 shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] lg:col-span-2">
+          <h3 className="text-black dark:text-white font-black uppercase text-sm tracking-widest mb-6 border-b-2 border-black/10 dark:border-white/10 pb-4">COMPLETION TRENDS</h3>
+          <div className="h-48 md:h-64">
             <Line 
               data={{
                 labels,
