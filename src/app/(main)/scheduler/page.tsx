@@ -1,77 +1,196 @@
 "use client";
 
 import { useState } from "react";
-import { CartoonCard } from "@/components/CartoonCard";
-import { CartoonButton } from "@/components/CartoonButton";
-import { Calendar, Clock, Zap } from "lucide-react";
+import { Settings, Edit, Rocket, Clock, Laptop, PlaySquare, Moon, Coffee, Target } from "lucide-react";
+
+interface ScheduleBlock {
+  start: string;
+  end: string;
+  title: string;
+  duration: string;
+  priority: "urgent" | "high" | "medium" | "low";
+  type: "task" | "break";
+}
 
 export default function SchedulerPage() {
-  const [running, setRunning] = useState(false);
-  const [schedule, setSchedule] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [schedule, setSchedule] = useState<ScheduleBlock[]>([]);
+  
+  const [routine, setRoutine] = useState({
+    wakeTime: "07:00",
+    workStart: "09:00",
+    workEnd: "17:30",
+    studyStart: "19:00",
+    studyEnd: "21:30",
+    sleepTime: "23:30",
+    breakSize: "15m",
+    chunkSize: "45m"
+  });
 
-  const handleRunScheduler = async () => {
-    setRunning(true);
-    // Mock AI scheduler delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setSchedule("AI has optimized your day! Best time to work on High Priority tasks is 10:00 AM - 1:00 PM. Take a break at 1:30 PM. Complete minor tasks by 4:00 PM.");
-    setRunning(false);
+  const generateTimetable = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ai/scheduler", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ routine }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSchedule(data.schedule);
+      } else {
+        alert("Failed to build schedule. Wait and try again.");
+      }
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const priorityColor = (pri: string) => {
+    switch (pri?.toLowerCase()) {
+      case "urgent": return "border-red-500";
+      case "high": return "border-orange-500";
+      case "medium": return "border-blue-500";
+      default: return "border-pink-500";
+    }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in transition-all">
-      <div className="flex justify-between items-center border-b-4 border-black pb-4">
-        <h1 className="text-3xl font-black uppercase tracking-tight">AI Scheduler</h1>
+    <div className="space-y-8 animate-in fade-in transition-all w-full max-w-7xl mx-auto px-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-black uppercase tracking-tight text-white flex items-center gap-3">
+          <span className="text-pink-500">🤖</span> AI SCHEDULER
+        </h1>
+        <p className="text-gray-400 font-bold ml-12">AI-optimized daily execution plan</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <CartoonCard className="bg-blue-50 dark:bg-slate-800">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-6 h-6 text-blue-500" />
-            <h2 className="text-2xl font-black uppercase tracking-tight">Daily Routine</h2>
+      <div className="flex flex-col xl:flex-row gap-8">
+        {/* Left Pane: Routine */}
+        <div className="w-full xl:w-5/12 space-y-4">
+          <div className="bg-[#1A1A24] border-2 border-[#D1D5DB] rounded-2xl p-6 shadow-[6px_6px_0_0_#D1D5DB]">
+            <div className="flex justify-between items-center mb-8 border-b-2 border-gray-700 pb-4">
+              <h2 className="text-white font-black uppercase tracking-widest text-lg flex items-center gap-2">
+                <Settings className="w-5 h-5 text-gray-400" /> DAILY ROUTINE
+              </h2>
+              <button className="px-5 py-1.5 rounded-full border-2 border-white text-white font-black uppercase hover:bg-white hover:text-black hover:-translate-y-0.5 shadow-[2px_2px_0_0_#fff] active:translate-y-0 active:shadow-none transition-all">
+                EDIT
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 pb-6">
+              {/* Wake Up */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">🌅 Wake Up</span>
+                <span className="text-2xl font-black text-white">{routine.wakeTime}</span>
+              </div>
+              
+              {/* Work Start */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">💼 Work Start</span>
+                <span className="text-2xl font-black text-white">{routine.workStart}</span>
+              </div>
+
+              {/* Work End */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">💼 Work End</span>
+                <span className="text-2xl font-black text-white">{routine.workEnd}</span>
+              </div>
+              
+              {/* Study Start */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">📚 Study Start</span>
+                <span className="text-2xl font-black text-white">{routine.studyStart}</span>
+              </div>
+              
+               {/* Study End */}
+               <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">📚 Study End</span>
+                <span className="text-2xl font-black text-white">{routine.studyEnd}</span>
+              </div>
+
+              {/* Sleep Time */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">😴 Sleep Time</span>
+                <span className="text-2xl font-black text-white">{routine.sleepTime}</span>
+              </div>
+
+              {/* Break Length */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">🍪 Break</span>
+                <span className="text-2xl font-black text-white">{routine.breakSize}</span>
+              </div>
+              
+              {/* Chunk Length */}
+              <div className="bg-[#101018] p-4 rounded-xl border border-gray-800 flex flex-col items-center justify-center text-center">
+                <span className="text-gray-400 text-xs font-bold uppercase mb-2 flex items-center gap-1">🎯 Chunk</span>
+                <span className="text-2xl font-black text-white">{routine.chunkSize}</span>
+              </div>
+            </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-white dark:bg-slate-700 border-2 border-black rounded-lg font-bold">
-              <span>Wake Up</span>
-              <span>07:00 AM</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-white dark:bg-slate-700 border-2 border-black rounded-lg font-bold">
-              <span>Work Start</span>
-              <span>09:00 AM</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-white dark:bg-slate-700 border-2 border-black rounded-lg font-bold">
-              <span>Work End</span>
-              <span>05:00 PM</span>
-            </div>
-          </div>
-          <div className="mt-4 text-right">
-            <button className="font-bold underline uppercase text-sm">Edit Routine</button>
-          </div>
-        </CartoonCard>
+          <button 
+            onClick={generateTimetable}
+            disabled={loading}
+            className="w-full py-5 rounded-2xl border-2 border-[#fff] font-black text-2xl text-white bg-[#E83E8C] hover:bg-[#D81B60] transition-transform shadow-[6px_6px_0_0_#D1D5DB] hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#D1D5DB] active:translate-y-0 active:shadow-none flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+             {loading ? <Clock className="animate-spin w-8 h-8" /> : <Rocket className="w-8 h-8" strokeWidth={2.5}/>} 
+             {loading ? "GENERATING..." : "RUN AI SCHEDULER"}
+          </button>
+        </div>
 
-        <CartoonCard className="flex flex-col h-full bg-purple-100 dark:bg-purple-900 justify-center items-center text-center">
-          <Calendar className="w-12 h-12 text-purple-600 dark:text-purple-300 mb-4" />
-          <h2 className="text-2xl font-black uppercase tracking-tight mb-2 text-purple-900 dark:text-white">Smart Setup</h2>
-          <p className="font-bold text-purple-800 dark:text-purple-200 mb-6">Create the perfect execution plan combining your routine and task priorities.</p>
-          <CartoonButton 
-            label={running ? "SCHEDULING..." : "🚀 RUN AI SCHEDULER"} 
-            color="bg-purple-400" 
-            onClick={handleRunScheduler} 
-            disabled={running} 
-            className="w-full max-w-sm"
-          />
-        </CartoonCard>
+        {/* Right Pane: Timetable */}
+        <div className="w-full xl:w-7/12">
+          <div className="bg-[#1A1A24] border-2 border-[#D1D5DB] rounded-2xl p-6 shadow-[6px_6px_0_0_#D1D5DB] min-h-[600px]">
+            <h2 className="text-white font-black uppercase tracking-widest text-lg flex items-center gap-2 mb-8 border-b-2 border-gray-700 pb-4">
+              <Clock className="w-5 h-5 text-gray-400" /> SMART TIMETABLE
+            </h2>
+
+            {schedule.length === 0 && !loading && (
+              <div className="text-center py-20 text-gray-500">
+                <Target className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="font-bold text-lg">Push the pink button to generate your day!</p>
+              </div>
+            )}
+            
+            {loading && (
+              <div className="text-center py-20 text-gray-500 animate-pulse">
+                <Clock className="w-16 h-16 mx-auto mb-4 animate-spin text-[#E83E8C]" />
+                <p className="font-bold text-lg text-[#E83E8C]">Synthesizing optimum blocks...</p>
+              </div>
+            )}
+
+            {!loading && schedule.length > 0 && (
+              <div className="space-y-4">
+                {schedule.map((block, idx) => (
+                  <div key={idx} className={`relative bg-[#1f2030] p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row md:items-center gap-4 border-l-4 ${priorityColor(block.priority)}`}>
+                    
+                    {/* Time Window */}
+                    <div className="flex flex-col border-r border-gray-600 pr-6 min-w-[80px]">
+                      <span className="text-[#F97316] font-black text-lg">{block.start}</span>
+                      <span className="text-gray-400 font-bold text-sm">{block.end}</span>
+                    </div>
+                    
+                    {/* Title & Detail */}
+                    <div className="flex-1 flex flex-col">
+                      <div className="text-white font-black uppercase text-lg flex items-center gap-2">
+                         {block.type === "break" ? "🚶" : "💻"} {block.title}
+                      </div>
+                      <div className="text-gray-400 text-xs font-bold flex items-center gap-2 mt-1">
+                        <Clock className="w-3 h-3" /> {block.duration} • <span className="lowercase">{block.priority}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-gray-500 mt-2 md:mt-0">
+                       <Clock className="w-5 h-5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
-
-      {schedule && (
-        <CartoonCard className="bg-green-100 dark:bg-green-900 border-green-800 animate-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Zap className="text-green-600 dark:text-green-300 w-6 h-6" />
-            <h2 className="text-xl font-black uppercase text-green-900 dark:text-white">Optimized Schedule</h2>
-          </div>
-          <p className="font-bold text-green-800 dark:text-green-100">{schedule}</p>
-        </CartoonCard>
-      )}
     </div>
   );
 }

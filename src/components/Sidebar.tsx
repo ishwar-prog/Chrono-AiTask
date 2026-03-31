@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CheckSquare, Calendar, BarChart2, FileText } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Calendar, BarChart2, FileText, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -16,7 +17,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-primary text-white flex-shrink-0 border-r-2 border-border hidden md:flex flex-col">
+    <aside className="w-64 bg-primary text-white shrink-0 border-r-2 border-border hidden md:flex flex-col">
       <div className="h-20 flex items-center justify-center border-b-2 border-border">
         <h1 className="text-2xl font-black tracking-tighter">CHRONOTASK</h1>
       </div>
@@ -39,6 +40,17 @@ export function Sidebar() {
           );
         })}
       </nav>
+      
+      {/* Sign Out Button */}
+      <div className="p-4 border-t-2 border-border">
+        <button 
+          onClick={() => signOut({ callbackUrl: '/' })}
+          className="w-full flex items-center justify-center space-x-2 px-4 py-3 font-black uppercase text-red-400 hover:text-white border-2 border-transparent hover:border-white hover:-translate-y-1 transition-all rounded-lg hover:bg-red-500 hover:shadow-[4px_4px_0_0_#ffffff]"
+        >
+          <LogOut className="w-5 h-5" strokeWidth={3} />
+          <span>Sign Out</span>
+        </button>
+      </div>
     </aside>
   );
 }

@@ -1,56 +1,221 @@
 "use client";
 
-import { CartoonCard } from "@/components/CartoonCard";
-import { BarChart, Bot } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, 
+  PointElement, LineElement, ArcElement, Title, Tooltip, Legend 
+} from 'chart.js';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Title, Tooltip, Legend);
+
+interface ITask {
+  _id: string;
+  status: "pending" | "completed" | "overdue";
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function AnalyticsPage() {
+  const [tasks, setTasks] = useState<ITask[]>([]);
+  const [filter, setFilter] = useState("30"); // days
+
+  const fetchTasks = async () => {
+    const res = await fetch("/api/tasks");
+    if (res.ok) {
+      setTasks(await res.json());
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  // 1. Filter tasks by Date Range
+  const now = new Date();
+  const filterDate = new Date();
+  if (filter !== "all") {
+    filterDate.setDate(now.getDate() - parseInt(filter));
+  }
+  
+  const filteredTasks = tasks.filter(t => filter === "all" ? true : new Date(t.createdAt) >= filterDate);
+
+  // 2. Compute KPI Metrics
+  const completedCount = filteredTasks.filter(t => t.status === "completed").length;
+  const pendingCount = filteredTasks.filter(t => t.status === "pending").length;
+  const overdueCount = filteredTasks.filter(t => t.status === "overdue").length;
+  const totalCount = filteredTasks.length;
+  
+  const completionRate = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+  let avgCompletionTime = "0.0";
+  const completedTasks = filteredTasks.filter(t => t.status === "completed");
+  if (completedTasks.length > 0) {
+    const totalDays = completedTasks.reduce((acc, t) => {
+      const start = new Date(t.createdAt).getTime();
+      const end = new Date(t.updatedAt).getTime();
+      return acc + (end - start) / (1000 * 60 * 60 * 24);
+    }, 0);
+    avgCompletionTime = (totalDays / completedTasks.length).toFixed(1);
+  }
+
+  // 3. Prepare Chart Data
+  // Bar Chart: Weekly Productivity (completed per day over last 7 visible days roughly, or spanning the filter)
+  const labels = [];
+  const barData = [];
+  const lineDataPending = [];
+  const lineDataCompleted = [];
+  
+  // Create an array of N days
+  const daysToShow = filter === "all" ? 30 : parseInt(filter);
+  for (let i = daysToShow - 1; i >= 0; i--) {
+     const d = new Date();
+     d.setDate(d.getDate() - i);
+     const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+     labels.push(dateStr);
+     
+     // count completions on this exact day
+     const completions = completedTasks.filter(t => new Date(t.updatedAt).toDateString() === d.toDateString()).length;
+     barData.push(completions);
+
+     const runningCompleted = completedTasks.filter(t => new Date(t.updatedAt) <= d).length;
+     lineDataCompleted.push(runningCompleted);
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    color: '#fff',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9CA3AF' } },
+      y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#9CA3AF' }, beginAtZero: true }
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in transition-all">
-      <div className="flex justify-between items-center border-b-4 border-black pb-4">
-        <h1 className="text-3xl font-black uppercase tracking-tight">Analytics & Reports</h1>
+    <div className="space-y-6 animate-in fade-in transition-all pb-12 w-full max-w-7xl mx-auto px-4">
+      
+      {/* Top Header & Filter */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-4xl font-black uppercase tracking-tight text-white">ANALYTICS</h1>
+        <select 
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="bg-[#181C25] border border-gray-600 text-white px-4 py-2 rounded-lg font-bold outline-none cursor-pointer hover:bg-gray-800 transition"
+        >
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="all">All time</option>
+        </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <CartoonCard className="flex flex-col justify-center items-center p-6 bg-pink-100 dark:bg-pink-900">
-          <span className="text-sm font-bold uppercase text-pink-800 dark:text-pink-200">Total Tasks</span>
-          <span className="text-5xl font-black text-pink-900 dark:text-white mt-2">124</span>
-        </CartoonCard>
-        <CartoonCard className="flex flex-col justify-center items-center p-6 bg-cyan-100 dark:bg-cyan-900">
-          <span className="text-sm font-bold uppercase text-cyan-800 dark:text-cyan-200">Completion Rate</span>
-          <span className="text-5xl font-black text-cyan-900 dark:text-white mt-2">82%</span>
-        </CartoonCard>
-        <CartoonCard className="flex flex-col justify-center items-center p-6 bg-yellow-100 dark:bg-yellow-900">
-          <span className="text-sm font-bold uppercase text-yellow-800 dark:text-yellow-200">Avg AI Score</span>
-          <span className="text-5xl font-black text-yellow-900 dark:text-white mt-2">0.76</span>
-        </CartoonCard>
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
+          <span className="text-3xl mb-2">✅</span>
+          <span className="text-4xl font-black text-white">{completedCount}</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">COMPLETED</span>
+        </div>
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
+          <span className="text-3xl mb-2">⏳</span>
+          <span className="text-4xl font-black text-white">{pendingCount}</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">PENDING</span>
+        </div>
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
+          <span className="text-3xl mb-2">🚨</span>
+          <span className="text-4xl font-black text-white">{overdueCount}</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">OVERDUE</span>
+        </div>
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-[4px_4px_0_0_#4B5563]">
+          <span className="text-3xl mb-2">📊</span>
+          <span className="text-4xl font-black text-white">{completionRate}%</span>
+          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-1">COMPLETION RATE</span>
+        </div>
       </div>
 
-      <CartoonCard className="bg-white dark:bg-slate-800 mt-8">
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart className="w-8 h-8 text-black dark:text-white" />
-          <h2 className="text-2xl font-black uppercase tracking-tight">Performance Chart</h2>
-        </div>
-        <div className="h-64 w-full border-2 border-black flex items-end justify-between p-4 bg-gray-50 dark:bg-slate-900 gap-2">
-          {/* Mock bar chart */}
-          {[40, 70, 45, 90, 65, 80, 55].map((height, i) => (
-            <div 
-              key={i} 
-              className="w-full bg-orange-400 border-2 border-black" 
-              style={{ height: `${height}%` }}
-            ></div>
-          ))}
-        </div>
-      </CartoonCard>
+      {/* Avg Completion Banner */}
+      <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-4 shadow-[4px_4px_0_0_#4B5563] text-gray-300 font-medium">
+        Avg completion time: <span className="text-white font-bold">{avgCompletionTime} days</span>
+      </div>
 
-      <CartoonCard className="bg-indigo-50 dark:bg-indigo-900 mt-8 relative overflow-hidden">
-        <div className="flex items-center gap-3 mb-4 relative z-10">
-          <Bot className="w-8 h-8 text-indigo-600 dark:text-indigo-300" />
-          <h2 className="text-2xl font-black uppercase tracking-tight text-indigo-900 dark:text-white">AI Insights</h2>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Weekly Productivity Bar */}
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563]">
+          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">WEEKLY PRODUCTIVITY</h3>
+          <div className="h-64">
+            <Bar 
+              data={{
+                labels,
+                datasets: [{ 
+                  data: barData, 
+                  backgroundColor: '#F97316', 
+                  borderRadius: 4,
+                  barPercentage: 0.6
+                }]
+              }} 
+              options={chartOptions} 
+            />
+          </div>
         </div>
-        <p className="font-bold text-lg text-indigo-800 dark:text-indigo-100 relative z-10">
-          "Your efficiency has increased by 15% this week! You are consistently knocking out High Priority tasks before 2 PM. Keep up the momentum on your DO LATER backlog to improve your overal AI Score."
-        </p>
-      </CartoonCard>
+
+        {/* Status Doughnut */}
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563]">
+          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">STATUS DISTRIBUTION</h3>
+          <div className="h-64 flex justify-center">
+            {totalCount > 0 ? (
+              <Doughnut 
+                data={{
+                  labels: ['Completed', 'Pending', 'Overdue'],
+                  datasets: [{
+                    data: [completedCount, pendingCount, overdueCount],
+                    backgroundColor: ['#22C55E', '#F97316', '#EF4444'],
+                    borderWidth: 2,
+                    borderColor: '#181C25',
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  color: '#fff',
+                  plugins: { 
+                    legend: { display: true, position: 'right', labels: { color: '#9CA3AF', font: { weight: 'bold' } } } 
+                  },
+                  cutout: '65%'
+                }}
+              />
+            ) : (
+              <div className="flex items-center text-gray-500 font-bold">No data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Completion Trends Line */}
+        <div className="bg-[#181C25] border-2 border-gray-600 rounded-xl p-6 shadow-[4px_4px_0_0_#4B5563] lg:col-span-2">
+          <h3 className="text-white font-black uppercase text-sm tracking-widest mb-6">COMPLETION TRENDS</h3>
+          <div className="h-64">
+            <Line 
+              data={{
+                labels,
+                datasets: [{
+                  data: lineDataCompleted,
+                  borderColor: '#0EA5E9',
+                  backgroundColor: 'transparent',
+                  borderWidth: 3,
+                  tension: 0.4,
+                  pointRadius: 0
+                }]
+              }}
+              options={chartOptions}
+            />
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }
