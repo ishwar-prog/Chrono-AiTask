@@ -3,13 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import OpenAI from "openai";
+import { askGemini } from "@/lib/gemini";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPEN_AI_API,
-});
-
-export async function POST(_req: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -18,8 +14,7 @@ export async function POST(_req: Request) {
 
     await connectToDatabase();
     
-    // @ts-ignore
-    const tasks = await Task.find({ user: session.user.id, status: { $ne: "completed" } });
+    const tasks = await Task.find({ user: (session.user as any).id, status: { $ne: "completed" } });
 
     if (tasks.length === 0) {
       return NextResponse.json({ analysis: "You currently have no pending tasks! Great job. Relax and take a break." });
@@ -61,31 +56,12 @@ export async function POST(_req: Request) {
       Do NOT include any external text other than the exact markdown structure shown.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3, // Slightly higher for friendly tone variation while staying rigid on structure
-    });
+    const analysisText = await askGemini(prompt, 0.3);
 
-    const analysisText = response.choices[0].message?.content || "No analysis could be completed.";
-
-    // Trigger basic scoring updates in background asynchronously just in case the db scores drifted
-    try {
-      // Background score recalc logic could go here
-    } catch (e) {}
-
-    return NextResponse.json({ analysis: analysisText });
-  } catch (error: any) {
+    return NextResponse.json({ analysis: analysisText || "No analysis could be completed." });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Dashboard Analysis Error:", error);
-    
-    // Explicitly check for quota limit failure
-    if (error.status === 429 || error?.error?.code === "insufficient_quota") {
-      return NextResponse.json(
-        { message: "API limit reached. Please update your API key." }, 
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

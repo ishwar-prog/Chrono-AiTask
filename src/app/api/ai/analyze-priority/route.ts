@@ -3,13 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import OpenAI from "openai";
+import { askGemini } from "@/lib/gemini";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPEN_AI_API,
-});
-
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -18,15 +14,14 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
     
-    // @ts-ignore
-    const tasks = await Task.find({ user: session.user.id, status: { $ne: "completed" } });
+    const tasks = await Task.find({ user: (session.user as any).id, status: { $ne: "completed" } });
 
     if (tasks.length === 0) {
       return NextResponse.json({ message: "No pending tasks to analyze" });
     }
 
     const tasksData = tasks.map((t) => ({
-      id: t._id,
+      id: t._id.toString(),
       title: t.title,
       priority: t.priority,
       deadline: t.deadline,
@@ -34,35 +29,29 @@ export async function POST(req: Request) {
 
     const prompt = `
       You are an AI task scheduler. Given the following list of tasks, assign each task a score between 0.00 and 1.00 representing its absolute priority.
-      A higher score means higher urgency/importance. Focus on deadlines and the Priority label (High > Medium > Low).
+      A higher score means higher urgency/importance. Focus on deadlines and the Priority label (Urgent > High > Medium > Low).
       
       Tasks: ${JSON.stringify(tasksData)}
       
-      Return ONLY a JSON array of objects with the following format:
+      Return ONLY a raw JSON array of objects with the following format, no markdown, no backticks, no explanation:
       [
-        { "id": "task_id", "aiScore": 0.95 }, ...
+        { "id": "task_id_here", "aiScore": 0.95 }
       ]
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.1,
-    });
-
-    const content = response.choices[0].message?.content || "[]";
-    let scores = [];
+    const content = await askGemini(prompt, 0.1);
+    let scores: Array<{ id: string; aiScore: number }> = [];
     try {
-      const match = content.match(/\[.*\]/s);
+      const match = content.match(/\[[\s\S]*\]/);
       const jsonStr = match ? match[0] : content;
       scores = JSON.parse(jsonStr);
-    } catch (e) {
+    } catch {
       console.error("Parse Error Content:", content);
       throw new Error("Failed to parse AI response JSON");
     }
 
     // Bulk update tasks with their new scores
-    const bulkOps = scores.map((scoreObj: any) => ({
+    const bulkOps = scores.map((scoreObj) => ({
       updateOne: {
         filter: { _id: scoreObj.id },
         update: { $set: { aiScore: scoreObj.aiScore } },
@@ -74,8 +63,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ message: "Tasks analyzed successfully" });
-  } catch (error: any) {
-    console.error("AI Analysis Error:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("AI Priority Analysis Error:", error);
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

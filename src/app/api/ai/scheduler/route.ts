@@ -3,9 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPEN_AI_API });
+import { askGemini } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +16,7 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
     
-    // @ts-ignore
-    const activeTasks = await Task.find({ user: session.user.id, status: { $ne: "completed" } });
+    const activeTasks = await Task.find({ user: (session.user as any).id, status: { $ne: "completed" } });
 
     if (activeTasks.length === 0) {
       return NextResponse.json({ 
@@ -56,29 +53,24 @@ export async function POST(req: Request) {
       3. Intersperse predefined "Quick Break" or "Long Break" items of the configured size between task blocks.
       4. Only return a strict JSON array of objects fitting this interface exactly:
          Array<{ start: "HH:MM", end: "HH:MM", title: string, duration: string, priority: "urgent" | "high" | "medium" | "low", type: "task" | "break" }>
-      5. Do NOT wrap the JSON in Markdown ticks like \`\`\`json. Return bare parseable JSON array.
+      5. Do NOT wrap the JSON in Markdown ticks. Return ONLY the bare parseable JSON array, no other text.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: systemPrompt }],
-      temperature: 0.2, // Must be strict to maintain JSON structure
-    });
-
-    const rawContent = response.choices[0].message?.content || "[]";
-    let schedule = [];
+    const rawContent = await askGemini(systemPrompt, 0.2);
+    let schedule: Array<{ start: string; end: string; title: string; duration: string; priority: string; type: string }> = [];
     try {
-      const match = rawContent.match(/\[.*\]/s);
+      const match = rawContent.match(/\[[\s\S]*\]/);
       const jsonStr = match ? match[0] : rawContent;
       schedule = JSON.parse(jsonStr);
-    } catch(e) {
+    } catch {
       console.error("Scheduler Parse Error Content:", rawContent);
       throw new Error("Failed to parse AI schedule JSON");
     }
 
     return NextResponse.json({ schedule });
-  } catch (error: any) {
-    console.error("Scheduler AI Error:", error);
-    return NextResponse.json({ message: "Failed to generate schedule due to AI parsing." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Scheduler AI Error:", message);
+    return NextResponse.json({ message: "Failed to generate schedule." }, { status: 500 });
   }
 }

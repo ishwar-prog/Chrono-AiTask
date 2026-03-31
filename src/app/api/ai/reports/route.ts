@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import OpenAI from "openai";
-
-const openai = new OpenAI({ apiKey: process.env.OPEN_AI_API });
+import { askGemini } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -28,19 +26,13 @@ export async function POST(req: Request) {
       Generate exactly ONE short, punchy sentence (maximum 20 words) analyzing their performance.
       If rate is low, suggest improvement like "Many tasks are being missed. Consider reducing task load."
       If rate is high, encourage them like "Incredible momentum this month! Keep crushing those high priority items."
-      Do not use quotation marks. Do not use hashtags.
+      Do not use quotation marks. Do not use hashtags. Return ONLY the sentence, nothing else.
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: systemPrompt }],
-      temperature: 0.5,
-    });
+    const insight = await askGemini(systemPrompt, 0.5);
 
-    const insight = response.choices[0].message?.content || "Keep striving for greatness every single day.";
-
-    return NextResponse.json({ insight });
-  } catch (error: any) {
+    return NextResponse.json({ insight: insight || "Keep striving for greatness every single day." });
+  } catch (error: unknown) {
     console.error("Reports AI Error:", error);
     return NextResponse.json({ insight: "Keep pushing forward, maintain focus on your daily targets." }, { status: 500 });
   }

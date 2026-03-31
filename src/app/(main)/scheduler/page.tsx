@@ -42,7 +42,8 @@ export default function SchedulerPage() {
         const data = await res.json();
         setSchedule(data.schedule);
       } else {
-        alert("Failed to build schedule. Wait and try again.");
+        const err = await res.json();
+        alert(err.message || "Failed to build schedule. Wait and try again.");
       }
     } catch(e) { console.error(e); }
     setLoading(false);
