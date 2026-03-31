@@ -15,8 +15,9 @@ export async function POST(req: Request) {
     }
 
     await connectToDatabase();
+    const normalizedEmail = email.toLowerCase();
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return NextResponse.json(
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
 
     const newUser = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
     });
 

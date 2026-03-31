@@ -21,6 +21,8 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
     if (isRegistering) {
       if (!name.trim()) {
@@ -33,11 +35,15 @@ export default function LoginPage() {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
+          body: JSON.stringify({ 
+            name: name.trim(), 
+            email: trimmedEmail, 
+            password: trimmedPassword 
+          }),
         });
 
         if (res.ok) {
-          await handleSignIn();
+          await handleSignIn(trimmedEmail, trimmedPassword);
         } else {
           const data = await res.json();
           setError(data.message || "Failed to register");
@@ -48,15 +54,15 @@ export default function LoginPage() {
         setIsLoading(false);
       }
     } else {
-      await handleSignIn();
+      await handleSignIn(trimmedEmail, trimmedPassword);
     }
   };
 
-  const handleSignIn = async () => {
+  const handleSignIn = async (emailToSign: string, passwordToSign: string) => {
     const res = await signIn("credentials", {
       redirect: false,
-      email,
-      password,
+      email: emailToSign,
+      password: passwordToSign,
     });
 
     if (res?.error) {

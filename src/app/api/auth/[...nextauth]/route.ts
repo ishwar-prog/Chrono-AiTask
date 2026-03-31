@@ -14,21 +14,29 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.error("Auth: Missing email or password");
           throw new Error("Missing email or password");
         }
         await connectToDatabase();
-        const user = await User.findOne({ email: credentials.email }).select("+password");
+        
+        const email = credentials.email.toLowerCase();
+        console.log(`Auth: Attempting login for ${email}`);
+        
+        const user = await User.findOne({ email }).select("+password");
 
         if (!user) {
+          console.error(`Auth: No user found for ${email}`);
           throw new Error("No user found with this email");
         }
 
         const isMatch = await bcrypt.compare(credentials.password, user.password);
 
         if (!isMatch) {
+          console.error(`Auth: Incorrect password for ${email}`);
           throw new Error("Incorrect password");
         }
 
+        console.log(`Auth: Login successful for ${email}`);
         return { id: user._id.toString(), email: user.email, name: user.name };
       },
     }),
