@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
-import { askGemini } from "@/lib/gemini";
+import { askGemini, extractJsonArray } from "@/lib/gemini";
 
 export async function POST() {
   try {
@@ -13,8 +13,11 @@ export async function POST() {
     }
 
     await connectToDatabase();
-    
-    const tasks = await Task.find({ user: (session.user as any).id, status: { $ne: "completed" } });
+
+    const tasks = await Task.find({
+      user: (session.user as Record<string, unknown>).id,
+      status: { $ne: "completed" },
+    });
 
     if (tasks.length === 0) {
       return NextResponse.json({ message: "No pending tasks to analyze" });
@@ -24,39 +27,34 @@ export async function POST() {
       id: t._id.toString(),
       title: t.title,
       priority: t.priority,
-      deadline: t.deadline,
+      deadline: t.deadline ? new Date(t.deadline).toISOString() : null,
     }));
 
-    const prompt = `
-      You are an AI task scheduler. Given the following list of tasks, assign each task a score between 0.00 and 1.00 representing its absolute priority.
-      A higher score means higher urgency/importance. Focus on deadlines and the Priority label (Urgent > High > Medium > Low).
-      
-      Tasks: ${JSON.stringify(tasksData)}
-      
-      Return ONLY a raw JSON array of objects with the following format, no markdown, no backticks, no explanation:
-      [
-        { "id": "task_id_here", "aiScore": 0.95 }
-      ]
-    `;
+    const prompt = `You are an AI task prioritizer. Score each task from 0.00 to 1.00.
+Higher score = more urgent/important.
+
+Scoring rules:
+- Priority weight: Urgent=0.9+, High=0.7-0.9, Medium=0.4-0.7, Low=0.1-0.4
+- Closer deadlines increase the score
+- No deadline = use priority weight only
+
+Tasks: ${JSON.stringify(tasksData)}
+
+Return ONLY a JSON array, no markdown, no backticks, no explanation:
+[{"id":"task_id","aiScore":0.95}]`;
 
     const content = await askGemini(prompt, 0.1);
-    let scores: Array<{ id: string; aiScore: number }> = [];
-    try {
-      const match = content.match(/\[[\s\S]*\]/);
-      const jsonStr = match ? match[0] : content;
-      scores = JSON.parse(jsonStr);
-    } catch {
-      console.error("Parse Error Content:", content);
-      throw new Error("Failed to parse AI response JSON");
-    }
+    const scores = extractJsonArray(content) as Array<{ id: string; aiScore: number }>;
 
     // Bulk update tasks with their new scores
-    const bulkOps = scores.map((scoreObj) => ({
-      updateOne: {
-        filter: { _id: scoreObj.id },
-        update: { $set: { aiScore: scoreObj.aiScore } },
-      },
-    }));
+    const bulkOps = scores
+      .filter((s) => s.id && typeof s.aiScore === "number")
+      .map((scoreObj) => ({
+        updateOne: {
+          filter: { _id: scoreObj.id },
+          update: { $set: { aiScore: scoreObj.aiScore } },
+        },
+      }));
 
     if (bulkOps.length > 0) {
       await Task.bulkWrite(bulkOps);
@@ -65,7 +63,7 @@ export async function POST() {
     return NextResponse.json({ message: "Tasks analyzed successfully" });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("AI Priority Analysis Error:", error);
+    console.error("AI Priority Analysis Error:", message);
     return NextResponse.json({ message }, { status: 500 });
   }
 }

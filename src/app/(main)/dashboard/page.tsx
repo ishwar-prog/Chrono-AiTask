@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { CartoonButton } from "@/components/CartoonButton";
+
 import { Brain, CheckSquare, Clock, AlertTriangle, Sparkles, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -21,7 +21,7 @@ interface ITask {
 export default function Dashboard() {
   const { data: session } = useSession();
   const [tasks, setTasks] = useState<ITask[]>([]);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,21 +37,23 @@ export default function Dashboard() {
   };
 
   const handleAnalyze = async () => {
-    setAnalyzing(true);
+    setIsAnalyzing(true);
     setAnalysisResult(null);
     try {
       const res = await fetch("/api/ai/analyze-dashboard", { method: "POST" });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setAnalysisResult(data.analysis);
-        await fetchTasks(); // refresh scores
+        await fetchTasks();
       } else {
-        alert("Failed to run AI priority logic.");
+        const errMsg = data.message || "AI analysis failed.";
+        setAnalysisResult(`⚠️ **Error:** ${errMsg}`);
       }
     } catch (e) {
       console.error(e);
+      setAnalysisResult("⚠️ **Error:** Could not reach AI service. Check your connection.");
     }
-    setAnalyzing(false);
+    setIsAnalyzing(false);
   };
 
   const completeTask = async (id: string) => {
@@ -100,18 +102,17 @@ export default function Dashboard() {
 
   const overdueTasksList = tasks.filter(t => t.status === "overdue");
 
-  // Format greeting
-  // @ts-ignore
-  const userName = session?.user?.name || session?.user?.email?.split('@')[0] || "User";
-  const greetings = ["Welcome back", "Ready to crush it", "Hello", "Let's get to work"];
-  const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+  // Format greeting — use hour-based selection to avoid hydration mismatch from Math.random()
+  const userName = (session?.user as Record<string, string>)?.name || session?.user?.email?.split('@')[0] || "User";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
     <div className="space-y-6 animate-in fade-in transition-all pb-12 w-full max-w-6xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-4xl font-black uppercase tracking-tight text-black dark:text-white">DASHBOARD</h1>
-        <p className="text-gray-500 font-bold ml-1">{randomGreeting}, {userName} 🚀</p>
+        <p className="text-gray-500 font-bold ml-1">{greeting}, {userName} 🚀</p>
       </div>
 
       {/* Stats Row */}
@@ -201,10 +202,10 @@ export default function Dashboard() {
           </div>
           <button 
             onClick={handleAnalyze}
-            disabled={analyzing}
+            disabled={isAnalyzing}
             className="px-8 py-3 rounded-full border-2 border-white font-black text-lg text-white bg-[#ec4899] hover:bg-[#db2777] transition-transform shadow-[4px_4px_0_0_#fff] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#fff] active:translate-y-0 active:shadow-[0_0_0_0_#fff] shrink-0"
           >
-            {analyzing ? "ANALYZING..." : "ANALYZE"}
+            {isAnalyzing ? "ANALYZING..." : "ANALYZE"}
           </button>
         </div>
         

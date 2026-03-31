@@ -12,28 +12,29 @@ export async function POST(req: Request) {
 
     const { stats } = await req.json();
 
-    const systemPrompt = `
-      You are a performance insight AI for ChronoTask. 
-      The user just loaded their Monthly Report.
-      
-      Here are their stats for this month:
-      - Total Tasks: ${stats.total}
-      - Completed: ${stats.completed}
-      - Not Done / Overdue: ${stats.notDone}
-      - Completion Rate: ${stats.rate}%
-      - Current Score: ${stats.score}/10
-      
-      Generate exactly ONE short, punchy sentence (maximum 20 words) analyzing their performance.
-      If rate is low, suggest improvement like "Many tasks are being missed. Consider reducing task load."
-      If rate is high, encourage them like "Incredible momentum this month! Keep crushing those high priority items."
-      Do not use quotation marks. Do not use hashtags. Return ONLY the sentence, nothing else.
-    `;
+    const prompt = `You are a performance insight AI for ChronoTask.
 
-    const insight = await askGemini(systemPrompt, 0.5);
+Stats this month:
+- Total Tasks: ${stats.total}
+- Completed: ${stats.completed}
+- Not Done / Overdue: ${stats.notDone}
+- Completion Rate: ${stats.rate}%
+- Score: ${stats.score}/10
 
-    return NextResponse.json({ insight: insight || "Keep striving for greatness every single day." });
+Generate exactly ONE short, punchy sentence (max 20 words) analyzing performance.
+Low rate → suggest improvement. High rate → encourage.
+No quotation marks. No hashtags. Return ONLY the sentence.`;
+
+    const insight = await askGemini(prompt, 0.5);
+
+    return NextResponse.json({
+      insight: insight.trim() || "Keep striving for greatness every single day.",
+    });
   } catch (error: unknown) {
     console.error("Reports AI Error:", error);
-    return NextResponse.json({ insight: "Keep pushing forward, maintain focus on your daily targets." }, { status: 500 });
+    return NextResponse.json(
+      { insight: "Keep pushing forward, maintain focus on your daily targets." },
+      { status: 200 } // Return 200 with fallback so UI doesn't break
+    );
   }
 }

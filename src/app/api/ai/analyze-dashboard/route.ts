@@ -13,55 +13,60 @@ export async function POST() {
     }
 
     await connectToDatabase();
-    
-    const tasks = await Task.find({ user: (session.user as any).id, status: { $ne: "completed" } });
+
+    const tasks = await Task.find({
+      user: (session.user as Record<string, unknown>).id,
+      status: { $ne: "completed" },
+    });
 
     if (tasks.length === 0) {
-      return NextResponse.json({ analysis: "You currently have no pending tasks! Great job. Relax and take a break." });
+      return NextResponse.json({
+        analysis: "You currently have no pending tasks! Great job. Relax and take a break. 🎉",
+      });
     }
 
     const tasksData = tasks.map((t) => ({
-      id: t._id,
       title: t.title,
       priority: t.priority,
       status: t.status,
-      deadline: t.deadline,
+      deadline: t.deadline ? new Date(t.deadline).toISOString() : "No deadline",
     }));
 
-    const prompt = `
-      You are a friendly, highly-energetic AI productivity assistant embedded in the "ChronoTask" dashboard.
-      Given the following active and overdue tasks, analyze them and generate a specific priority report.
-      
-      Tasks List: ${JSON.stringify(tasksData, null, 2)}
-      
-      Output ONLY a markdown formatted response matching exactly this structural tone and layout:
-      
-      Hey there! Let's get your tasks sorted for maximum productivity! 🚀
+    const prompt = `You are a friendly AI productivity assistant for "ChronoTask".
+Analyze these tasks and generate a priority report in markdown:
 
-      1. **Do FIRST:** "[Highest priority task name]" (high priority, deadline [deadline details]). [Short reason why it's the closest deadline or most critical].
-      2. **Priority Adjustments:** "[Second most important task]" also has a high priority and an early deadline, so it should be considered with equal urgency.
-      3. **Urgent Deadline Warnings:**
-         * "[Task Title]" - Due [date context]! ⏰
-         [List any other tasks here with clock emojis]
-      4. **Smart Order for Today:**
-         1. [First Task Name]
-         2. [Second Task Name]
-         3. [Third Task Name]
-         ... (list all passed tasks in strict order of importance)
+Tasks: ${JSON.stringify(tasksData, null, 2)}
 
-      Let's crush these! 💪
-      
-      Always adapt the names, dates, and reasoning dynamically based on the Tasks List provided above. 
-      CRITICAL RULE: A task is ONLY considered an immediate 'DO TODAY' action if its deadline is strictly within 48 hours from right now. Separate the 'Smart Order for Today' securely based on this 48-hour time constraint!
-      Do NOT include any external text other than the exact markdown structure shown.
-    `;
+Current time: ${new Date().toISOString()}
 
-    const analysisText = await askGemini(prompt, 0.3);
+Format your response EXACTLY like this (fill in real data):
 
-    return NextResponse.json({ analysis: analysisText || "No analysis could be completed." });
+Hey there! Let's get your tasks sorted for maximum productivity! 🚀
+
+1. **Do FIRST:** "[Most urgent task]" — [reason]. 
+2. **Priority Adjustments:** [Any tasks that should be reprioritized].
+3. **Urgent Deadline Warnings:**
+   * "[Task]" - Due [when]! ⏰
+4. **Smart Order for Today:**
+   1. [Task 1]
+   2. [Task 2]
+   3. [Task 3]
+
+Let's crush these! 💪
+
+RULES:
+- A task is "DO TODAY" ONLY if its deadline is within 48 hours from now.
+- Sort by: Urgent > High > Medium > Low, then by nearest deadline.
+- Return ONLY the markdown, no extra commentary.`;
+
+    const analysisText = await askGemini(prompt, 0.4);
+
+    return NextResponse.json({
+      analysis: analysisText || "No analysis could be completed.",
+    });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Dashboard Analysis Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown AI error";
+    console.error("Dashboard Analysis Error:", message);
     return NextResponse.json({ message }, { status: 500 });
   }
 }
