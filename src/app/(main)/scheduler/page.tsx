@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Edit, Rocket, Clock, Target, Trash2, X, Check } from "lucide-react";
 
 interface ScheduleBlock {
@@ -8,8 +8,10 @@ interface ScheduleBlock {
   end: string;
   title: string;
   duration: string;
-  priority: "urgent" | "high" | "medium" | "low";
-  type: "task" | "break";
+  priority: "urgent" | "high" | "medium" | "low" | string;
+  type: "task" | "break" | string;
+  taskId?: string;
+  isDueToday?: boolean;
 }
 
 export default function SchedulerPage() {
@@ -34,6 +36,41 @@ export default function SchedulerPage() {
     chunkSize: "45m",
   });
   const [routineDraft, setRoutineDraft] = useState({ ...routine });
+
+  // Fetch initial schedule from database
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/schedule");
+        const data = await res.json();
+        if (res.ok && data.schedule) {
+          setSchedule(data.schedule);
+          if (data.routine) {
+            setRoutine(data.routine);
+            setRoutineDraft(data.routine);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch schedule", err);
+      }
+      setLoading(false);
+    };
+    fetchSchedule();
+  }, []);
+
+  // Save changes to Database helper
+  const syncToDatabase = async (newSchedule: ScheduleBlock[], newRoutine: typeof routine) => {
+    try {
+      await fetch("/api/schedule", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schedule: newSchedule, routine: newRoutine }),
+      });
+    } catch (err) {
+      console.error("Failed to sync schedule", err);
+    }
+  };
 
   const generateTimetable = async () => {
     setLoading(true);
@@ -78,11 +115,14 @@ export default function SchedulerPage() {
       updated[editingIndex] = { ...updated[editingIndex], ...editForm };
       setSchedule(updated);
       setEditingIndex(null);
+      syncToDatabase(updated, routine);
     }
   };
 
   const deleteBlock = (idx: number) => {
-    setSchedule(schedule.filter((_, i) => i !== idx));
+    const updated = schedule.filter((_, i) => i !== idx);
+    setSchedule(updated);
+    syncToDatabase(updated, routine);
   };
 
   // --- Routine editing ---
@@ -94,6 +134,7 @@ export default function SchedulerPage() {
   const saveRoutine = () => {
     setRoutine({ ...routineDraft });
     setIsEditingRoutine(false);
+    syncToDatabase(schedule, { ...routineDraft });
   };
 
   const cancelRoutineEdit = () => {
@@ -230,10 +271,25 @@ export default function SchedulerPage() {
             {/* Schedule blocks */}
             {!loading && schedule.length > 0 && (
               <div className="space-y-4">
-                {schedule.map((block, idx) => (
+                {schedule.map((block, idx) => {
+                  const isHighlight = block.isDueToday;
+                  const isMeal = block.type === "meal";
+                  const isBreak = block.type === "break" && !isHighlight;
+                  
+                  let bgClass = "bg-[#1f2030] dark:bg-slate-900"; // default task
+                  if (isHighlight) bgClass = "bg-[#FEF08A] dark:bg-[#ca8a04]";
+                  else if (isMeal) bgClass = "bg-[#d1fae5] dark:bg-emerald-900/60";
+                  else if (isBreak) bgClass = "bg-[#f3f4f6] dark:bg-slate-700/60";
+                  
+                  const textMode = isHighlight ? "text-black" : (isMeal || isBreak) ? "text-gray-800 dark:text-gray-200" : "text-white";
+                  const secondaryTextMode = isHighlight ? "text-black/70" : "text-gray-500 dark:text-gray-400";
+                  const borderColor = isMeal ? "border-emerald-500" : isBreak ? "border-gray-400" : priorityColor(block.priority);
+                  const blockIcon = isMeal ? "🍽️" : block.type === "break" ? "☕" : "💻";
+
+                  return (
                   <div
                     key={idx}
-                    className={`relative bg-[#1f2030] p-4 rounded-xl border border-gray-700 border-l-4 ${priorityColor(block.priority)}`}
+                    className={`relative ${bgClass} p-4 rounded-xl border-2 border-black dark:border-white shadow-[4px_4px_0_0_#000] dark:shadow-[4px_4px_0_0_#fff] border-l-8 ${borderColor}`}
                   >
                     {editingIndex === idx ? (
                       /* ---- EDIT MODE ---- */
@@ -298,19 +354,20 @@ export default function SchedulerPage() {
                       /* ---- VIEW MODE ---- */
                       <div className="flex flex-col md:flex-row md:items-center gap-4">
                         {/* Time Window */}
-                        <div className="flex flex-col border-r border-gray-600 pr-6 min-w-[80px]">
-                          <span className="text-[#F97316] font-black text-lg">
+                        <div className={`flex flex-col border-r ${isHighlight ? 'border-black/20' : 'border-gray-600'} pr-6 min-w-[80px]`}>
+                          <span className={`${isHighlight ? 'text-black' : 'text-[#F97316]'} font-black text-lg`}>
                             {block.start}
                           </span>
-                          <span className="text-gray-400 font-bold text-sm">{block.end}</span>
+                          <span className={`${secondaryTextMode} font-bold text-sm`}>{block.end}</span>
                         </div>
 
                         {/* Title & Detail */}
                         <div className="flex-1 flex flex-col pr-20">
-                          <div className="text-white font-black uppercase text-lg flex items-center gap-2">
-                            {block.type === "break" ? "🚶" : "💻"} {block.title}
+                          <div className={`${textMode} font-black uppercase text-lg flex items-center gap-2`}>
+                            {blockIcon} {block.title}
+                            {isHighlight && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full shadow-[2px_2px_0_0_#000]">DUE TODAY</span>}
                           </div>
-                          <div className="text-gray-400 text-xs font-bold flex items-center gap-2 mt-1">
+                          <div className={`${secondaryTextMode} text-xs font-bold flex items-center gap-2 mt-1`}>
                             <Clock className="w-3 h-3" /> {block.duration} •{" "}
                             <span className="lowercase">{block.priority}</span>
                           </div>
@@ -336,7 +393,8 @@ export default function SchedulerPage() {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

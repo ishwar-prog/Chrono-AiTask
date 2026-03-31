@@ -3,7 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { connectToDatabase } from "@/lib/mongodb";
 import Task from "@/models/Task";
+import Schedule from "@/models/Schedule";
 import { askGroq, extractJsonArray } from "@/lib/groq";
+import { format } from "date-fns";
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
           {
             start: routine.wakeTime || "07:00",
             end: routine.sleepTime || "23:00",
-            title: "Free Time! No active tasks.",
+            title: "No active tasks — enjoy your day!",
             duration: "All Day",
             priority: "low",
             type: "break",
@@ -36,35 +38,40 @@ export async function POST(req: Request) {
       });
     }
 
-    const simplifiedTasks = activeTasks.map((t) => ({
-      title: t.title,
-      priority: t.priority,
-      deadline: t.deadline ? new Date(t.deadline).toISOString() : "No deadline",
-      status: t.status,
-    }));
+    const now = new Date();
+    const todayDate = format(now, "yyyy-MM-dd");
 
-    const prompt = `You are an AI daily scheduler. Create a timetable for today.
+    const taskLines = activeTasks.map((t) => {
+      const dl = t.deadline
+        ? format(new Date(t.deadline), "yyyy-MM-dd HH:mm")
+        : "none";
+      const dueToday = t.deadline
+        ? format(new Date(t.deadline), "yyyy-MM-dd") === todayDate
+        : false;
+      return `- "${t.title}" (priority:${t.priority.toLowerCase()}, deadline:${dl}, id:${t._id.toString()}${dueToday ? ", DUE_TODAY" : ""})`;
+    }).join("\n");
 
-User's routine:
-- Wake: ${routine.wakeTime || "07:00"}
-- Work: ${routine.workStart || "09:00"} to ${routine.workEnd || "17:00"}
-- Study: ${routine.studyStart || "19:00"} to ${routine.studyEnd || "21:30"}
-- Sleep: ${routine.sleepTime || "23:00"}
-- Work chunks: ${routine.chunkSize || "45m"}, Breaks: ${routine.breakSize || "15m"}
+    const prompt = `Create a short daily schedule as JSON array. Today: ${todayDate}.
+Day: ${routine.wakeTime || "07:00"} to ${routine.sleepTime || "23:30"}.
+Work: ${routine.workStart || "09:00"}-${routine.workEnd || "17:30"}. Study: ${routine.studyStart || "19:00"}-${routine.studyEnd || "21:30"}.
 
-Tasks to schedule:
-${JSON.stringify(simplifiedTasks, null, 2)}
+User tasks:
+${taskLines}
 
-Rules:
-1. Place urgent/high priority tasks in earliest work slots
-2. Add breaks between task blocks
-3. Keep tasks within work and study windows only
-4. Each block must have: start (HH:MM), end (HH:MM), title, duration, priority (urgent/high/medium/low), type (task/break)
+IMPORTANT RULES:
+1. Each task appears EXACTLY ONCE. NEVER repeat a task. ${activeTasks.length} tasks = ${activeTasks.length} task blocks maximum.
+2. Include: Breakfast(30m), Lunch(45m), Dinner(30m).
+3. Include 2-3 breaks(15m each), NOT more.
+4. For gaps between tasks/meals, use "Work" or "Study" as filler (type:"task", taskId:"").
+5. Keep it SHORT: around ${activeTasks.length + 8} blocks total (tasks + 3 meals + 2-3 breaks + 1-2 work/study fillers).
+6. DUE_TODAY tasks go first in morning.
+7. No "Free Time" blocks.
 
-Return ONLY a JSON array, no markdown backticks, no explanation:
-[{"start":"09:00","end":"09:45","title":"Task Name","duration":"45m","priority":"high","type":"task"}]`;
+JSON format — return ONLY the array:
+[{"start":"09:00","end":"09:45","title":"Task Name","duration":"45m","priority":"high","type":"task","taskId":"id","isDueToday":false}]
+type must be "task","meal", or "break". taskId="" for meals/breaks/fillers.`;
 
-    const rawContent = await askGroq(prompt, 0.2);
+    const rawContent = await askGroq(prompt, 0.1);
     const schedule = extractJsonArray(rawContent) as Array<{
       start: string;
       end: string;
@@ -72,18 +79,47 @@ Return ONLY a JSON array, no markdown backticks, no explanation:
       duration: string;
       priority: string;
       type: string;
+      taskId?: string;
+      isDueToday?: boolean;
     }>;
 
-    // Validate the schedule has the right shape
-    const validSchedule = schedule.filter(
-      (block) => block.start && block.end && block.title && block.type
+    // ---- SERVER-SIDE CLEANUP ----
+    // 1. Remove filler/junk blocks
+    const cleaned = schedule.filter(
+      (b) =>
+        b.start && b.end && b.title && b.type &&
+        !b.title.toLowerCase().includes("free time") &&
+        !b.title.toLowerCase().includes("wind down") &&
+        !b.title.toLowerCase().includes("end of")
     );
 
-    if (validSchedule.length === 0) {
+    // 2. DEDUPLICATE: each task title can only appear ONCE
+    const seenTitles = new Set<string>();
+    const deduped = cleaned.filter((block) => {
+      // Allow multiple meals and breaks (they share names and that's fine)
+      if (block.type === "meal" || block.type === "break") {
+        return true;
+      }
+      const key = block.title.toLowerCase().trim();
+      if (seenTitles.has(key)) {
+        return false; // duplicate task — remove it
+      }
+      seenTitles.add(key);
+      return true;
+    });
+
+    if (deduped.length === 0) {
       throw new Error("AI returned an empty or malformed schedule.");
     }
 
-    return NextResponse.json({ schedule: validSchedule });
+    // Save to Database
+    await Schedule.findOneAndUpdate(
+      { user: (session.user as Record<string, unknown>).id },
+      { blocks: deduped, routine: routine, dateGenerated: new Date() },
+      { new: true, upsert: true }
+    );
+
+    return NextResponse.json({ schedule: deduped });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Scheduler AI Error:", message);
