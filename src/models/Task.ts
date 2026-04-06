@@ -15,10 +15,10 @@ const TaskSchema = new Schema<ITask>(
   {
     title: { type: String, required: true },
     description: { type: String, default: "" },
-    priority: { 
-      type: String, 
-      enum: ["Urgent", "High", "Medium", "Low"], 
-      default: "Medium" 
+    priority: {
+      type: String,
+      enum: ["Urgent", "High", "Medium", "Low"],
+      default: "Medium",
     },
     status: {
       type: String,
@@ -34,7 +34,7 @@ const TaskSchema = new Schema<ITask>(
     aiScore: { type: Number, default: 0 },
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Task = models.Task || model<ITask>("Task", TaskSchema);
